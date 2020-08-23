@@ -1,10 +1,7 @@
 {
   "private": true,
-  "name": "minimal-blog",
-  "description": "Typography driven, feature-rich blogging theme with minimal aesthetics. Includes tags/categories support and extensive features for code blocks such as live preview, line numbers, and line highlighting.",
-  "version": "1.2.0",
-  "author": "LekoArts <hello@lekoarts.de>",
-  "license": "MIT",
+  "name": "kyunghwa-yoo",
+  "author": "Kyunghwa Yoo",
   "starter-name": "gatsby-starter-minimal-blog",
   "scripts": {
     "build": "gatsby build",
@@ -13,7 +10,8 @@
     "build:cypress": "cross-env CYPRESS_SUPPORT=y yarn build",
     "start": "gatsby develop",
     "serve": "gatsby serve",
-    "clean": "gatsby clean"
+    "clean": "gatsby clean",
+    "deploy": "gatsby build && gh-pages -d public -b master"
   },
   "dependencies": {
     "@lekoarts/gatsby-theme-minimal-blog": "^2.4.0",
@@ -22,12 +20,19 @@
     "gatsby-plugin-manifest": "^2.2.3",
     "gatsby-plugin-netlify": "^2.1.3",
     "gatsby-plugin-offline": "^2.2.4",
+    "gatsby-plugin-prettier-eslint": "^1.0.4",
     "gatsby-plugin-sitemap": "^2.2.19",
     "gatsby-plugin-webpack-bundle-analyser-v2": "^1.1.10",
     "react": "^16.13.1",
     "react-dom": "^16.13.1"
   },
   "devDependencies": {
-    "cross-env": "^5.2.0"
+    "@types/theme-ui": "^0.3.6",
+    "@typescript-eslint/parser": "^3.9.1",
+    "cross-env": "^5.2.0",
+    "eslint": "^7.7.0",
+    "gh-pages": "^3.1.0",
+    "prettier": "^2.0.5",
+    "typescript": "^4.0.2"
   }
 }
