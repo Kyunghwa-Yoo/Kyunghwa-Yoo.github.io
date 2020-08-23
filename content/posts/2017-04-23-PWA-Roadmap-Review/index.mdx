@@ -1,0 +1,116 @@
+---
+title: PWA Roadmap 후기
+date: 2017-04-23 00:00:00 +0900
+categories:
+- conference
+tags:
+- conference
+---
+# PWA Roadmap 후기
+
+## Keynote: Progressive Web Apps: What, Why and How
+* Ajax등장: 페이지 전환이 없어짐.
+* Mobile device 등장
+* 모바일웹보다 앱을 많이 사용한다.
+* 사용자들은 대부분 자기가 자주 쓰는 탑3에서 80%의 시간을 보낸다.
+* 사용자가 월별로 설치하는 앱 수: 0
+* 앱은 기능이 좋지만 서비스범위가 부족하고 웹은 기능이 적지만 서비스범위가 많다.
+* Progressive: 점진적인, 웹사용자경험을 근본적인 관점에서 향상하는 것.
+* 올바른 사용자 경험에 필요한 것
+    * 신뢰성: 사용자에게 온라인 불가 상태를 절대 표시하지 않음을 의미합니다. (크롬 오프라인 공룡)
+    * 고성능: 53%의 사용자는 페이지 로딩이 3초 이상 걸리면 해당 페이지를 닫아버립니다.
+    * 인게이징: 이탈한 사용자가 돌아올 수 있도록 하기
+        * 홈스크린: 바탕화면에 아이콘 만들기
+        * 몰입(Immersive): 주소창이 몰입도를 방해한다. 풀스크린 서비스를 지원하면 어떨까?
+        * 알림: 웹에 접속해있지 않은 사용자에게 알림을 준다.
+    * 사용자는 이 3개가 만족되면 앱과 웹의 차이점을 느끼지 못한다. (동일한 경험을 제공받고 있기 때문에)
+* Service workers
+    * 신뢰성 높은 어플리케이션. 
+    * 프록시를 자바스크립트를 통해 클라이언트상에서 지원.
+    * Push 서비스의 토대
+
+## Session 1: Service Workers for Instant and Offline Experiences
+* PWA list 라는 웹사이트 들어가보기
+* Filpkart lite, Twitter Lite, Wego 등등 예제
+* Web App Manifest / Service Worker / Push
+* udacity에 PWA 만들어볼수 있는 강의가 있으니 들어볼 것
+* [IsServiceWorkerReady?](https://jakearchibald.github.io/isserviceworkerready/)
+* Dedicated Worker
+    * 메인 쓰레드를 방해하지 않고 별도 쓰레드를 만든다.
+* e.waitUntil: 프로미스가 resolve되기 전까지는 서비스워커를 죽이지 말라!
+* 주요 개념
+    * Install
+        * Register
+            * scope이 key값이고 URL이 value임.
+            * serviceWorker.register 콜
+            * registration: service워커 관리 단위
+                * installing
+                    * 인스톨 이벤트리스너를 등록해서 캐시를 저장한다.
+                    * 인스톨 유알엘은 하나의 인스톨이라도 실패하면 전체가 실패
+                * waiting
+                    * 웨이팅이 액티브가 되는 시점은 서비스되고 있는 클라이언트가 없어야됨
+                    * activate 이벤트 리스너를 등록하면 액티브될때 발생된다.
+                    * 이때 캐싱 버전관리 같은 것들이 진행된다.
+                * active
+                    * fetch, push 등을 서비스할 수 있는 상태가 된다.
+        * Update
+            * registeration.update가 call됬을때 변경사항이 있으면 install이 다시 invoke
+                * 이때 바로 들어오지 않고 waitUntil하다가 변경됨.
+                * 이때 캐싱 업데이트 등을 처리한다.
+        * Unregister
+    * Client matching
+        * 네비게이션할때 scope을 찾아서 매칭한다.
+        * 매칭된 그것에 해당하는 서비스워커를 실행시킨다. 
+        * subresource requests: 메인 리소스 내부에서 발생하는 서버 리소스에 대한 fetch요청들
+            * 한번 클라이언트매칭이 되면 그것을 토대로 다른 리퀘스트를 처리한다.
+    * Functional event handling
+        * fetch, push, notificationclick, sync(네트워크가 끊어졌다가 다시 연결됬을때 invoke)
+    * caching
+        * pre-cache: 서비스워커가 처음 설치될때 던져줌. 스태틱한 데이터를 저장할 수 있는 좋은 찬스
+        * dynamic cache: 다이나믹하게도 캐싱을 할 수 있음
+    * https
+    * fetch, streams API
+        * 표준화 활발히 진행중
+    * service worker 사용패턴
+        * precache: waitUntil에 parameter로 Promise를 넣으면 Promise가 Resolve되기 전까지 ServiceWorker를 죽이지 않는다.
+        * cache on user demand: 다이나믹하게 캐싱할 수 있다.
+        * offline-first: 일단 캐싱에 먼저 있는지 확인한다. respondWith
+        * cache migration
+        * onpush
+    * 패턴 Offline cookbook 참고
+    * pwa.rocks: PWA 사례
+
+## Session 2: Securing the Foundation with HTTPS
+* Service Worker도 HTTPS가 보장되어야 가능하다. localhost는 상관없음
+* HSTS
+* TLS Handshake
+* Chrome devTools Security에서 HTTPS 관련 정보 확인할 수 있다.
+
+## Session 3: Deep Engagement: Installable apps and Push Notifications
+* Web Manifest
+    * Manifest JSON file을 meta태그로 넣으면 끝
+* Chrome devTools - Application tab에서 Manifest 확인 가능
+* Push API
+    * gcm_sender_id 를 Manifest.json에 그냥 넣으면 보안상 위험하니까 VAPID를 이용해서 암호화해서 넣는다.
+
+## Session 4: Tooling for Progressive Web Apps: Lighthouse and More
+* Lighthouse: 웹페이지 성능 측정 도구
+    * 객관적인 수치가 지표로 사용될 수 있다.
+
+## Session 5: AMP for Progressive Web Apps
+* 공식적으로 AMP에서는 자바스크립트를 사용할 수 없다.
+    * 그래서 iframe과 shadow DOM을 이용한다.
+* amp-install-serviceworker
+* AMP by Example: AMP 예제들로만 모아둔 사이트
+
+## Session 6: Web Payments API
+* 망할것같은 느낌이 강하게 든다 ㅠㅠ
+* 아직 해결해야 될 단점들이 많아서 쉽게 사용되지 않을 것 같다.
+
+## Session 7: PWA with React.js and Firebase
+* Codebusking 유튜버
+* 쩐다... 너무 빨리 지나가서 듣기 바빴다
+
+## Session 8: PWA with Angular
+* ng-conf 2017에 나왔던 얘기
+* angular-cli 를 사용한다.

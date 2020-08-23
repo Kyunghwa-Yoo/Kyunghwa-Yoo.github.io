@@ -1,0 +1,32 @@
+---
+title: parseInt()와 Number()의 차이점
+date: 2017-09-29 01:06:00 +0900
+categories:
+- javascript
+tags:
+- javascript
+---
+
+url-safe base64 encoding한 숫자를 다시 decoding해서 Number로 형변환했는데
+
+```js
+console.log(Number(decodedNum)); // NaN
+```
+
+근데
+
+```js
+console.log(parseInt(decodedNum)); // 정상적으로 숫자 출력
+```
+
+엥 차이가 뭐지?
+
+관련해서 정리가 잘되어있는 페이지를 찾았다. 
+> [참고하기](http://www.cydemy.com/openlec/view/208)
+
+한 가지 파악하지 못한것은 내 케이스는 일반적인 숫자 형태의 문자열이었다. (e.g. 318475) 
+근데 왜 Number()로 했을 때는 NaN이고 parseInt()를 했을 때는 정상출력되었을까? 
+아직 원인을 파악하지 못하고 있다.
+
+오늘의 Today I Learned
+> 문자열을 숫자로 바꿀때는 `parseInt()`, `parseFloat()`이 목적에 적합하다. `Number()`는 문자열을 숫자로 변경해주는 기능이 부가적으로 있을 뿐 그 목적으로 생성된 것이 아니다. 

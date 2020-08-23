@@ -1,0 +1,333 @@
+---
+title: 자바스크립트 prototype
+date: 2017-12-12 12:00:00 +0900
+categories:
+- javascript
+tags:
+- javascript
+---
+
+# prototype
+자바스크립트는 Function() 의 인스턴스에 자동으로 prototype 속성을 만든다. (생성자 함수가 아니더라도 만든다)
+목적은 효율성 및 재사용성에 있다.
+prototype 은 상속의 개념에 있어서 중요하다.
+네이티브 생성자 함수(Object(), Array(), Function() 등)가 prototype 속성을 사용해 생성자 인스턴스가 메소드와 속성을 상속받도록 하고 있다.
+그래서 매번 Array() 인스턴스를 만들 때 마다 join() 과 같은 메소드를 매번 만들어 줄 필요가 없다.
+또한 사용자 정의 생성자 함수를 만들 때 자바스크립트 네이티브 객체와 동일한 방식으로 프로토타입 상속을 구현할 수 있다.
+
+new 키워드와 생성자 함수로 객체를 만들면 생성자 함수의 prototype 속성과 새로 만들어진 객체 인스턴스 사이에 연결고리가 생긴다.
+
+```javascript
+Array.prototype.foo = 'foo';
+
+var myArray = new Array();
+
+console.log(myArray.__proto__.foo); // __proto__ 를 사용할 수 있는 브라우저에서만 가능하다.
+console.log(myArray.constructor.prototype.foo); // __proto__ 를 사용할 수 없는 곳에서도 가능하다.
+console.log(myArray.foo); // 프로토타입 체인을 통해 찾아갈 수도 있다.
+```
+
+프로토타입 체인의 마지막은 Object.prototype 이다.
+
+# 내부 프로퍼티 [[Prototype]]
+모든 객체 인스턴스는 [[Prototype]] 내부 프로퍼티를 가지고 있다.
+이를 통해 프로토타입의 변화를 추적한다.
+[[Prototype]] 프로퍼티의 값은 `Object.getPrototypeOf()` 메소드로 읽을 수 있다.
+`Object.prototype.isPrototypeOf()` 메소드를 사용하여 어떤 객체가 다른 객체의 프로토타입인지 알 수 있다.
+
+```javascript
+var obj = {};
+var prototype = Object.getPrototypeOf(obj);
+
+console.log(prototype);
+console.log(prototype === Object.prototype);
+console.log(Object.prototype.isPrototypeOf(obj));
+```
+
+# prototype 속성 대체
+prototype 속성을 새 객체로 대체하면 기본 constructor 속성이 삭제된다.
+만약 기본 prototype을 변경할 것이라면 constructor 속성을 원래대로 복원해주어야 한다.
+
+```javascript
+// prototype을 변경하지 않으면 참조가 유지된다.
+var Bar = function Bar(){};
+
+var BarInstance = new Bar();
+
+console.log(BarInstance.constructor === Bar);
+console.log(BarInstance.constructor);
+
+// prototype을 변경하면 참조가 깨진다.
+var Foo = function Foo(){};
+Foo.prototype = {}; // prototype 값을 빈값으로 대체한다.
+
+var FooInstance = new Foo();
+
+console.log(FooInstance.constructor === Foo); // 참조가 망가진다.
+console.log(FooInstance.constructor); // Foo() 가 아닌 Object()를 참조한다.
+
+// prototype을 변경해야된다면 constructor 속성을 복원해주어야 한다.
+var Bas = function Bas(){};
+Bas.prototype = {constructor: Bas};
+
+var BasInstance = new Bas();
+
+console.log(BasInstance.constructor === Bas);
+console.log(BasInstance.constructor);
+```
+
+또 다른 예제를 살펴 보자.
+객체 리터럴 방식으로 prototype 을 덮어 쓰면 한 번에 여러 프로토타입 메소드를 정의할 수 있어서 편리하다는 장점은 있다. 
+하지만 이럴 경우 위 예제와 같이 constructor 가 삭제되므로 반드시 constructor 를 선언해 주어야 한다.
+
+```javascript
+function Person(name) {
+    this.name = name;
+}
+
+Person.prototype = {
+    constructor: Person,
+    logName: function() {
+        console.log(this.name);
+    },
+    toString: function() {
+        return 'My name is ' + this.name;
+    }
+};
+
+var person1 = new Person('Kyunghwa');
+var person2 = new Person('YooKH');
+
+person1.logName();
+console.log(person1.toString());
+person2.logName();
+console.log(person2.toString());
+``` 
+위 예제에서 person1, person2 의 내부 프로퍼티 [[Prototype]] 은 Person.prototype 을 참조하고 있다.
+Person.prototype 의 constructor 프로퍼티는 Person 을 참조하고 있다.
+이렇게 해서 person1, person2 는 Person 생성자와 연결되어 있다.
+
+# 생성자와 prototype
+생성자에서 매번 동일하게 사용되는 메소드나 변하지 않는 원시값 같은 경우 prototype 으로 만드는게 더 효율적이다.
+n 개의 객체 인스턴스를 만들었을 때 n 개의 프로퍼티를 만들지 않고 1개만 만들기 때문이다.
+
+```javascript
+function Person(name) {
+    this.name = name;
+}
+
+Person.prototype.logName = function () {
+    console.log(this.name);
+};
+
+var person1 = new Person('Kyunghwa');
+var person2 = new Person('YooKH');
+
+person1.logName();
+person2.logName();
+```
+
+# prototype 상속
+prototype에서 상속한 속성은 가장 최근 값을 사용한다.
+인스턴스를 생성한 후 생성자의 prototype의 속성을 변경하면 인스턴스의 prototype 속성도 같이 변한다.
+단, prototype 속성을 새 객체로 대체하면 이전에 만든 인스턴스는 갱신되지 않는다.
+서로 다른 prototype을 바라보게 될 수 있다.
+사용자 정의 생성자도 네이티브 생성자처럼 프로토타입을 상속할 수 있다.
+
+자바스크립트에서 prototype을 부모 객체로 생성한 인스턴스로 설정하는 것으로 상속을 구현할 수 있다.
+
+```javascript
+var Person = function() {
+    this.bar = 'bar';
+};
+Person.prototype.foo = 'foo';
+
+var Chef = function() {
+    this.goo = 'goo';
+};
+
+Chef.prototype = new Person(); // 부모의 객체 인스턴스를 프로토타입으로 설정한다.
+
+var chef = new Chef();
+
+console.log(chef.foo);
+console.log(chef.goo);
+console.log(chef.bar);
+```
+
+# prototype 체이닝
+javascript는 객체에 찾는 속성이 없을 경우 prototype을 뒤진다.
+모든 객체 인스턴스는 인스턴스를 만든 생성자 함수를 가리키는 '__proto__' 속성을 가진다.
+프로토타입 체이닝의 끝은 Object.prototype 이다.
+in 연산자를 사용하면, 객체의 속성을 확인할 때 프로토타입 체인에서 상속받은 속성까지 포함한다.
+hasOwnProperty 메소드를 사용하면 해당 객체의 고유 속성인지만 확인한다.
+
+for in 으로 객체 속성을 탐색할 수 있다. 
+이 때, 속성에 접근하는 순서가 속성이 정의된 순서와 다를 수 있다. 
+열거할 수 있는 속성만 for in 에서 볼 수 있다. 
+(열거할 수 없는 생성자 속성 같은 경우 루프안에서 볼 수 없다.)
+어떤 속성이 열거할 수 있는지는 Object.prototype.propertyIsEnumerable 메소드를 사용해 확인할 수 있다.
+
+```javascript
+var obj = {};
+var arr = [];
+obj.prop = 'is enumerable';
+arr[0] = 'is enumerable';
+
+console.log(obj.propertyIsEnumerable('prop'));   // true
+console.log(arr.propertyIsEnumerable(0));        // true
+```
+
+# prototype 은 freeze 를 해도 수정할 수 있다.
+`Object.freeze()` 를 이용하면 객체를 읽기전용으로 만들 수 있다.
+하지만 prototype 에 값을 추가할 수 있다.
+프로퍼티는 동결되어도 프로퍼티의 객체 값은 동결되지 않는다.
+
+```javascript
+function Person(name) {
+    this.name = name;
+}
+
+var person1 = new Person('Kyunghwa');
+var person2 = new Person('YooKH');
+
+Object.freeze(person1);
+
+Person.prototype.logName = function() {
+    console.log(this.name);
+};
+
+person1.logName(); // 정상적으로 'Kyunghwa' 가 출력된다.
+person2.logName(); // 정상적으로 'YooKH' 가 출력된다.
+```
+
+# Object.prototype
+객체가 상속을 받을 때 별도로 지정하지 않으면 기본적으로 Object.prototype 을 상속받는다.
+중요한 점은 Object.prototype 을 수정하지 말아야 한다.
+Object.prototype 에 속성을 추가하면 모든 객체에 그 속성이 추가되어 예상치 못한 문제가 발생할 수 있다.
+만약 열거 가능한 속성을 추가하면 for in 반복문에 걸릴 수 있다.
+
+## valueOf
+Object.prototype 의 메소드 중 하나로, 객체를 표현하는데 대표하는 값을 반환한다.
+valueOf() 는 객체에 연산자를 사용할 때 호출된다. 
+String은 문자열을 반환하고 Number는 숫자를 반환한다.
+주로 원시 래퍼 타입에서 사용된다.
+
+## toString
+valueOf() 가 원시값이 아닌 참조 값을 반환할 때 toString() 이 대비책으로 호출된다.
+
+```javascript
+var person = {
+    name: 'Kyunghwa'
+};
+
+console.log('Person: ' + person); // person.valueOf() 가 참조값을 반환하였기 때문에 toString() 호출된다.
+```
+
+# 객체 상속: Object.create()
+`Object.create()` 로 prototype 으로 사용할 객체를 지정해줄 수 있다.
+
+```javascript
+var parent = {
+    name: 'Parent',
+    logName: function() {
+        console.log(this.name);
+    }
+};
+
+var child = Object.create(parent, { // 자식객체가 부모객체를 상속받는다.
+    name: {
+        value: 'Child',
+        configurable: true,
+        enumerable: true,
+        writable: true
+    }
+});
+
+parent.logName();
+child.logName();
+
+console.log(parent.hasOwnProperty('logName'));
+console.log(parent.isPrototypeOf(child));
+console.log(child.hasOwnProperty('logName'));
+```
+
+# 생성자 상속
+자바스크립트에서 생성자 함수는 모두 prototype 프로퍼티를 가지고 있다.
+그리고 생성자함수를 만들면 기본적으로 Object.prototype 을 상속받도록 된다.
+이 prototype은 재정의가 가능하므로 생성자가 다른 생성자를 상속받도록 할 수 있다.
+
+```javascript
+function Rectangle(width, height) {
+    this.width = width;
+    this.height = height;
+}
+
+Rectangle.prototype.getArea = function() {
+    return this.width * this.height;
+};
+
+Rectangle.prototype.toString = function() {
+    return 'Rectangle: ' + this.width + ' x ' + this.height;
+};
+
+function Square(size) {
+    this.width = size;
+    this.height = size;
+}
+
+Square.prototype = new Rectangle();
+Square.prototype.constructor = Square;
+
+Square.prototype.toString = function() {
+    return 'Square: ' + this.width + ' x ' + this.height; 
+};
+
+var rect = new Rectangle(5, 10);
+var square = new Square(10);
+
+console.log(rect.getArea());
+console.log(square.getArea());
+
+console.log(rect.toString());
+console.log(square.toString());
+
+console.log(rect instanceof Rectangle);
+console.log(rect instanceof Square);
+console.log(rect instanceof Object);
+
+console.log(square instanceof Rectangle);
+console.log(square instanceof Square);
+console.log(square instanceof Object);
+```
+
+위 예제에서 square 인스턴스의 [[Prototype]] 내부 프로퍼티는 Square.prototype 을 참조하고 있다.
+Sqaure.prototype 의 [[Prototype]] 내부 프로퍼티와 rect 인스턴스의 [[Prototype]] 내부 프로퍼티는 모두 Rectangle.prototype 을 참조하고 있다.
+Rectangle.prototype 의 [[Prototype]] 내부 프로퍼티는 Object.prototype 을 참조하고 있다.
+마지막 Object.prototype 의 [[Prototype]] 내부 프로퍼티는 null 이다.
+
+## 생성자 훔치기
+하위타입 생성자에서 call() 이나 apply() 를 사용하며 새로 생성된 객체를 인수로 전달하면 상위타입 생성자를 호출 할 수 있다.
+위의 생성자 상속 예제에서 Square 생성자 함수에서 Rectangle 생성자 함수를 호출할 수 있다.
+
+```javascript
+function Square(size) {
+    Rectangle.call(this, size, size);
+}
+```
+
+## 상위타입 메소드 접근
+하위타입의 메소드가 상위타입의 메소드를 덮어 쓰는 일이 많이 발생한다. 이 때 만약 하위타입 메소드가 아닌 상위타입 메소드를 사용하고 싶을 경우 call() 이나 apply() 를 사용한다.
+위의 생성자 상속 예제에서 Square.prototype.toString 에서 Rectangle.prototype.toString 을 사용할 수 있다.
+
+```javascript
+Square.prototype.toString = function() {
+    var text = Rectangle.prototype.toString.call(this);
+    return text.replace('Rectangle', 'Square');
+};
+```
+
+## psuedoclassical inheritance
+자바스크립트의 상속은 대부분 생성자 훔치기와 프로토타입 체인을 함께 사용하여 이루어진다.
+그렇게 클래스 기반 언어의 상속을 비슷하게 흉내내기 때문에 **'의사 클래스 상속'** 이라고 부르기도 한다.
+메소드 상속은 프로토타입 상속을 통해서 상속하며, 프로퍼티 상속은 생성자 훔치기를 통해서 상속한다. 

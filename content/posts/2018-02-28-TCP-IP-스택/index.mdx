@@ -1,0 +1,79 @@
+---
+title: TCP/IP 네트워크 스택 이해하기 요약
+date: 2018-02-28 10:00:00 +0900
+categories:
+- network
+tags:
+- network
+---
+
+# TCP/IP의 중요 성질
+- 연결을 먼저 맺고 데이터를 주고 받는다.
+- 양방향 데이터 통신을 하고 바이트스트림을 사용한다.
+- 데이터를 순서대로 전송하며 순서를 표시하는데 32BitInt 를 사용한다.
+- 수신자가 ACK(데이터받았음)을 보내지 않으면 송신자는 알아서 재전송 한다.
+- 송신자는 수신자가 받을 수 있는 바이트 수 만큼의 데이터만 보낸다.
+- 네트워크 정체를 방지하기 위해 네트워크에 유입되는 데이터의 양을 제한한다.
+
+# 데이터 전송
+![](http://d2.naver.com/content/images/2015/06/helloworld-47667-1.png)
+1. 전송할 유저 데이터를 준비한다.
+2. 커널메모리에 유저 데이터의 일부를 복사한다.
+3. 송신용 Socket buffer의 뒷부분에 복사된 유저 데이터의 일부를 추가한다.
+4. TCP 제어용 블록 구조체(TCP 연결 처리에 필요한 정보가 있다)의 뒷부분에 Socket buffer 를 추가한다.
+5. IP 헤더를 추가하고 IP routing(목적지로 가기 위한 다음 IP주소를 찾는 작업)을 한다.
+6. Ethernet 헤더를 추가한다. Ethernet 헤더는 다음 IP의 MAC주소를 찾는다.
+7. NIC(Network Interface Card)은 패킷전송에 필요한 헤더를 추가한 후 네트워크에 전송한다.
+
+# 데이터 수신
+![](http://d2.naver.com/content/images/2015/06/helloworld-47667-2.png)
+1. NIC가 패킷을 검사하고 메모리에 전송한다.
+2. 드라이버가 패킷을 운영체제가 이해할 수 있도록 만든다.
+3. Ethernet도 패킷이 올바른지 검사한다.
+4. IP도 패킷이 올바른 패킷인지 검사한다.
+5. TCP도 패킷이 올바른지 검사한다.
+6. TCP 제어용 블록 구조체를 통해 받은 패킷을 처리한다. 
+7. Application 에서 read해서 유저메모리로 읽어들인다.
+
+# TCP 3-way-handshake
+클라이언트와 서버가 서로 데이터를 보낼 준비가 되었다는 보장을 하기 위해 세션을 수립하는 과정.
+1. 초기상태
+    - 클라이언트: **'CLOSED'** 상태로 대기중
+    - 서버: **'CLOSED'** 상태에서 Passive Open(TCB생성) 후에 **'LISTEN'** 상태로 대기중
+2. 클라이언트에서 서버로 *'SYN'* 전송
+    - 클라이언트: Active Open(TCB생성, *'SYN'* 전송) 후에 **'SYN-SENT'** 상태로 변경
+    - 서버: *'SYN'* 수신
+3. 서버에서 클라이언트로 *'SYN+ACK'* 전송
+    - 클라이언트: *'SYN+ACK'* 수신
+    - 서버:  - **'SYN-RECEIVED'** 상태로 변경
+4. 클라이언트에서 서버로 *'ACK'* 전송
+    - 클라이언트: **'ESTABLISHED'** 상태로 변경
+    - 서버: *'ACK'* 수신 후에 **ESTABLISHED** 상태로 변경
+
+# TCP 4-way-handshake
+클라이언트와 서버가 세션을 종료하기 위해 수행하는 절차.
+1. 초기상태
+    - 클라이언트: **'ESTABLISHED'** 상태
+    - 서버: **'ESTABLISHED'** 상태
+2. 클라이언트에서 서버로 *'FIN'* 전송
+    - 클라이언트: **'FIN-WAIT-1'** 상태로 변경
+    - 서버: *'FIN'* 수신
+3. 서버에서 클라이언트로 *'ACK'* 전송
+    - 클라이언트: *'ACK'* 수신 후 **'FIN-WAIT-2'** 상태로 변경
+    - 서버: **'CLOSE_WAIT'** 상태로 변경 후 App에 종료 요청
+4. 서버에서 클라이언트로 *'FIN'* 전송
+    - 클라이언트: *'FIN'* 수신
+    - 서버: **'LAST-ACK'** 상태로 변경
+5. 클라이언트에서 서버로 *'ACK'* 전송
+    - 클라이언트: **TIME-WAIT** 상태로 일정시간 대기 후 **'CLOSED'** 상태로 변경 (뒤늦게 도착하는 패킷이 있을까봐)
+    - 서버: *'ACK'* 수신 후 **'CLOSED'** 상태로 변경
+
+---
+
+참고 문서
+
+[D2 문서](http://d2.naver.com/helloworld/47667)
+
+[Mind Net 문서](http://mindnet.tistory.com/entry/%EB%84%A4%ED%8A%B8%EC%9B%8C%ED%81%AC-%EC%89%BD%EA%B2%8C-%EC%9D%B4%ED%95%B4%ED%95%98%EA%B8%B0-22%ED%8E%B8-TCP-3-WayHandshake-4-WayHandshake)
+
+---

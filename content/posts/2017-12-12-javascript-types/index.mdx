@@ -1,0 +1,31 @@
+---
+title: 자바스크립트 타입
+date: 2017-12-12 15:00:00 +0900
+categories:
+- javascript
+tags:
+- javascript
+---
+
+# truthy value, falsy value
+- truthy value: 객체, 비어있지 않은 문자열, 0이 아닌 숫자, true
+- falsy value: 빈 문자열, 0, false, null, undefined, NaN 
+# 묵시적 형변환
+- == 로 두 타입을 비교하면 타입을 맞춰서 비교하기 때문에 정확한 비교가 되지 못한다.
+
+# 모든 참조 타입은 Object 를 상속받는다.
+
+```javascript
+var arr = new Array();
+var obj = new Object();
+var func = new Function();
+
+// 모두 true
+console.log(arr instanceof Object);
+console.log(obj instanceof Object);
+console.log(func instanceof Object);
+```
+
+# autoboxing
+String, Number, Boolean 과 같은 primitive wrapper type 에서 메소드를 사용하면 해당 객체로 자동으로 바꾼 후 메소드를 사용한 다음 다시 원시값으로 복구된다.
+여기서 자동으로 객체로 변환하는 부분을 autoboxing 이라고 한다.

@@ -1,0 +1,263 @@
+---
+title: 자바스크립트 native functions
+date: 2017-12-12 13:00:00 +0900
+categories:
+- javascript
+tags:
+- javascript
+---
+
+# Object()
+- Object() 생성자 함수는 1개의 인수만 전달받는다. 
+- 이 인수에 빈 값이나 null, undefined 가 들어갈 경우 빈 객체를 만들고, 다른 데이터(숫자, 문자, 정규식, 불린, 배열, 함수)가 들어갈 경우 그 데이터 타입으로 만든다.
+- 객체 리터럴 방식({})으로 Object() 객체를 생성하는게 코드도 간결하고 관련 데이터도 간결하게 볼 수 있어서 좋다.
+- 그리고 Object.prototype이 가장 마지막 프로토타입이다.
+
+## Object() 속성
+- prototype
+
+## 인스턴스 속성
+- constructor
+
+## 인스턴스 메소드
+- hasOwnProperty()
+- isPrototypeOf()
+- propertyIsEnumerable()
+- toLocaleString()
+- toString()
+- valueOf()
+
+## Object 리터럴
+
+```javascript
+var obj = new Object(); // Object 객체 생성
+var objLiteral = {}; // Object 리터럴
+
+// 생성자가 같은 native code를 가리키고 있다.
+console.log(obj.constructor);
+console.log(objLiteral.constructor);
+
+// 둘 다 object 를 가리킨다.
+console.log(typeof obj);
+console.log(typeof objLiteral);
+```
+
+---
+
+# Function()
+- Function() 생성자를 사용해서 함수를 만드는 방식은 eval()을 사용하기 때문에 추천되지는 않는다.
+- Function() 생성자에 new 가 있으나 없으나 결과는 같지만, Function() 생성자를 직접 호출하면 클로저가 생기지 않는다.
+
+## Function() 속성
+- prototype
+
+
+## 인스턴스 속성
+- constructor
+- arguments
+- length
+
+## 인스턴스 메소드
+- apply()
+- call()
+- toString()
+
+## Function 리터럴
+
+```javascript
+var func = new Function('x', 'y', 'return x*y'); // Function 객체 생성
+var funcLiteral = function(x, y) { // Function 리터럴
+  return x*y;
+};
+
+// 생성자가 같은 native code를 가리키고 있다.
+console.log(func.constructor);
+console.log(funcLiteral.constructor);
+
+// 둘 다 function을 가리킨다.
+console.log(typeof func);
+console.log(typeof funcLiteral);
+```
+
+---
+
+# Array()
+- Array() 생성자에 숫자값 매개변수 1개만 넣으면 빈 배열이 매개변수의 길이로 1개 생성된다.
+- Array 인지 확인하기 위해 `Array.isArray()` 를 사용한다. ([참고](https://developer.mozilla.org/ko/docs/Web/JavaScript/Reference/Global_Objects/Array/isArray))
+
+```javascript
+var arr = new Array();
+var obj = new Object();
+
+console.log(Array.isArray(arr)); // true
+console.log(Array.isArray(obj)); // false
+
+// 함수의 arguments 는 배열이 아니므로 Array.isArray 는 false 다
+(function(arg1, arg2) {
+    console.log(arguments);
+    console.log(Array.isArray(arguments));
+})('arg1', 'arg2');
+```
+
+## Array 리터럴
+
+```javascript
+var arrayObj = new Array('foo', 'bar'); // Array 객체 생성
+var arrayLiteral = ['foo', 'bar']; // Array 리터럴
+
+// 생성자가 같은 native code를 가리키고 있다.
+console.log(arrayObj.constructor);
+console.log(arrayLiteral.constructor);
+
+// 둘 다 object 를 가리킨다.
+console.log(typeof arrayObj);
+console.log(typeof arrayLiteral);
+
+```
+
+## 인스턴스 속성
+- constructor
+- index
+- length
+- input
+
+## 인스턴스 메소드
+- pop()
+- push()
+- reverse()
+- shift()
+- sort()
+- splice()
+- unshift()
+- concat()
+- join()
+- slice()
+
+---
+
+# String()
+- new String() 으로 문자열 '객체'를 만든다. typeof 를 하면 'object' 다.
+- String() 또는 '' 로 문자열을 만든다. typeof 를 하면 'string' 이다.
+
+## String 리터럴
+
+```javascript
+var stringObj = new String('str'); // String 객체 생성
+var stringLiteral = 'str'; // String 리터럴. 따옴표안에 문자열을 넣으면 된다.
+
+// 생성자가 같은 native code를 가리키고 있다.
+console.log(stringObj.constructor);
+console.log(stringLiteral.constructor);
+
+// 리터럴은 string을 가리키고 객체는 object를 가리킨다.
+console.log(typeof stringObj);
+console.log(typeof stringLiteral);
+```
+
+## String() 메소드
+- fromCharCode
+
+## 인스턴스 속성
+- constructor
+- length
+
+## 인스턴스 메소드
+- charAt()
+- charCodeAt()
+- concat()
+- indexOf()
+- lastIndexOf()
+- localeCompare()
+- match()
+- quote()
+- replace()
+- search()
+- slice()
+- split()
+- substr()
+- substring()
+- toLocaleLowerCase()
+- toLocaleUpperCase()
+- toLowerCase()
+- toString()
+- toUpperCase()
+- valueOf()
+
+---
+
+# Number()
+- new Number() 로 숫자 '객체'를 만든다. typeof 를 하면 'object' 다.
+- Number() 로 숫자를 만든다. typeof 를 하면 'number' 다.
+- `1..toString()` 는 문법적으로 오류가 없다. 첫번째 점이 10진수 솟자임을 알리는 용도로 사용되었기 때문이다.
+
+## Number 리터럴
+
+```javascript
+var numberObj = new Number(23); // Number 객체 생성
+var numberLiteral = 23; // Number 리터럴. 숫자만 입력하면 된다.
+
+// 생성자가 같은 native code를 가리키고 있다.
+console.log(numberObj.constructor);
+console.log(numberLiteral.constructor);
+
+// 리터럴은 number를 가리키고 객체는 object를 가리킨다.
+console.log(typeof numberObj);
+console.log(typeof numberLiteral);
+
+```
+
+---
+
+# Boolean()
+- new Boolean() = typeof 'object'
+- Boolean() = typeof 'boolean'
+- 0, -0, null, false, NaN, undefined, '' 를 제외한 모든 값은 true 로 인식한다.
+- `new Boolean(false)` 는 객체로 인식하기 때문에 true 이다.
+
+## Boolean 리터럴
+
+```javascript
+var booleanObj = new Boolean(true); // Boolean 객체 생성
+var booleanLiteral = true; // Boolean 리터럴. true나 false를 넣으면 된다.
+
+// 생성자가 같은 native code를 가리키고 있다.
+console.log(booleanObj.constructor);
+console.log(booleanLiteral.constructor);
+
+// 리터럴은 boolean을 가리키고 객체는 object를 가리킨다.
+console.log(typeof booleanObj);
+console.log(typeof booleanLiteral);
+```
+
+---
+
+# RegExp
+- 정규표현식을 만드는 생성자.
+
+```javascript
+var numbersConstructor = new RegExp('\\d+','g'); // 생성자를 이용해서 정규표현식 생성
+var numbersLiteral = /\d+/g; // 리터럴을 이용해서 정규표현식 생성 
+
+console.log(numbersConstructor);
+console.log(numbersLiteral);
+```
+
+## RegExp 리터럴
+
+```javascript
+var regExp = new RegExp('\bt[a-z]+\b'); // RegExp 객체 생성
+var regExpLiteral = /\bt[a-z]+\b/; // RegExp 리터럴
+
+// 생성자가 같은 native code를 가리키고 있다.
+console.log(regExp.constructor);
+console.log(regExpLiteral.constructor);
+
+// 둘 다 object를 가리킨다.
+console.log(typeof regExp);
+console.log(typeof regExpLiteral);
+``` 
+
+---
+
+# Math
+- Math 는 생성작 함수가 아닌 단순히 편의를 위한 정적 함수임을 잊지 말자.

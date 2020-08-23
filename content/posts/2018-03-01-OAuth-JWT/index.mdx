@@ -1,0 +1,54 @@
+---
+title: OAuth 와 JWT
+date: 2018-03-01 10:00:00 +0900
+categories:
+- network
+tags:
+- network
+---
+
+# OAuth
+- 인증을 위한 오픈 스탠다드 프로토콜
+- OAuth에서 Auth는 Authentication(인증) 과 Authorization(허가)의 의미가 모두 담겨있다.
+- 즉 외부 사용자에게 인증을 해주고 사용 허가를 주는 것이다.
+
+## OAuth v1.0a 인증 과정
+![](https://oauth.net/core/diagram.png)
+
+## OAuth v1.0a 의 단점
+- 웹 어플리케이션이 아닌 애플리케이션에서는 사용하기 힘들다.
+- 절차가 복잡하여 제작하기 어렵고 Service Provider 에도 연산 부담이 발생한다.
+
+## OAuth 2.0 의 장점
+- HTTPS를 사용하기 때문에 암호화가 필요없다.
+- 보안강화를 위해 AccessToken의 만료기간을 설정할 수 있다.
+
+## OAuth 2.0 인증 과정
+```
++--------+                               +---------------+
+|        |--(A)- Authorization Request ->|   Resource    |
+|        |                               |     Owner     |
+|        |<-(B)-- Authorization Grant ---|               |
+|        |                               +---------------+
+|        |
+|        |                               +---------------+
+|        |--(C)-- Authorization Grant -->| Authorization |
+| Client |                               |     Server    |
+|        |<-(D)----- Access Token -------|               |
+|        |                               +---------------+
+|        |
+|        |                               +---------------+
+|        |--(E)----- Access Token ------>|    Resource   |
+|        |                               |     Server    |
+|        |<-(F)--- Protected Resource ---|               |
++--------+                               +---------------+
+
+// 출처: http://blog.weirdx.io/post/39955
+```
+- Resource Owner: 클라이언트가 리소스에 접근할 수 있는 허가증을 제공하는 역할
+- Authorization Server: 허가증을 들고 간 클라이언트에게 리소스에 접근할 수 있는 Access Token을 제공하는 역할
+- Resource Server: 클라이언트의 Access Token 을 확인 후 리소스를 제공한다.
+
+# JWT
+- JSON-Web-Token 은 두 개체(ex. 서버-클라이언트) 사이에서 JSON을 이용해서 가볍고 자체적으로 필요한 정보들을 가지고 있는 방식으로 정보를 전달하게 해주는 웹표준이다.
+- 보통 인증을 할 때 주로 사용된다. 사용자가 로그인을 하면 그 사용자에 대한 정보(민감한 정보는 담지 말아야 한다)를 담아서 JWT로 사용자에게 전달한다. 사용자는 그 다음부터는 전달받은 JWT를 Header에 넣어서 요청을 하게 되고 서버는 그 JWT를 해석해서 사용자에 대한 정보를 파악한다.

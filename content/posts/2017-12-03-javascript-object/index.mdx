@@ -1,0 +1,337 @@
+---
+title: 자바스크립트 객체
+date: 2017-12-03 10:00:00 +0900
+categories:
+- javascript
+tags:
+- javascript
+---
+
+# 자바스크립트 객체
+자바스크립트에서 객체는 이름이 있는 값('속성'이라고 한다. 영어로는 attribute)들의 집합이다.
+
+```javascript
+var person = new Object(); // Object() 를 이용해 객체 생성
+
+// 속성 채우기
+person.age = 30;
+person.living = true;
+person.gender = 'male';
+
+// 메소드도 추가할 수 있다.
+person.getGender = function () {
+    return person.gender;
+};
+
+console.log(person); // 객체 출력
+console.log(person.getGender()); // 'male' 출력
+```
+자바스크립트는 객체를 사용해 값을 표현한다. primitive type('foo', 12, true)도 객체가 될 수 있다. (String, Number, Boolean)
+
+위 예제에서 Object() 는 생성자함수이다. 생성자함수는 미리 정해진 객체를 만들어 내는 템플릿이다. 사용자가 직접 생성자함수를 만들 수 있다.
+```javascript
+// Person 생성자를 만든다.
+var Person = function(age, living, gender) {
+  this.age = age;
+  this.living = living;
+  this.gender = gender;
+  this.getGender = function() {
+    return this.gender;
+  };
+};
+
+var person = new Person(30, true, 'male'); // Person() 을 이용해 객체 생성
+
+console.log(person); // 객체 출력
+console.log(person.getGender());
+``` 
+
+사용자가 생성자를 만드는 방법은 2가지가 있다.
+- 생성자 함수를 통해서 만드는 방법. (factory 패턴이라고 한다.)
+- 객체 인스턴스가 프로토타입 상속을 받도록 하는 방법.
+
+두 방법 다 결과적으로 같은 객체를 만들어낸다.
+
+# 생성자 함수
+생성자 함수의 역할은 같은 값을 가지고 같은 동작을 하는 객체를 여러 개 만드는 것에 있다. 
+생성자 함수는 new 키워드와 함께 실행하지 않는다면 단순한 함수일 뿐이다. 거짓값(null, undefined, 0, '')이 반환될 것이다. 
+만일 new 키워드와 함께 생성자함수가 실행되면 새로운 객체를 설정하여 그 객체를 반환한다. 
+그것을 **'인스턴스'** 라고 한다.
+
+new 가 없이 생성자를 쓰면 생성자 함수 안에서 사용된 this 는 전역 this 가 될 수 있다.
+
+```javascript
+function Person() {
+    this.name = 'Kyunghwa';
+}
+
+var person = Person(); // new 가 누락되었다.
+
+console.log(person instanceof Person); // 생성자로 사용된 것이 아니므로 false
+console.log(typeof person);
+console.log(name); // 함수에서 가리키는 this 가 전역이 되기 때문에 name 이 정상적으로 'Kyunghwa' 가 출력된다.
+```
+
+## scope-safe 생성자
+new가 없이 호출했을 때를 대응하기 위한 생성자.
+new 없이 생성자가 호출되었을 때 this 가 생성자를 가리키는지 여부에 따라 구분하는 것이 포인트다.
+
+```javascript
+function Person(name) {
+    if (this instanceof Person) {
+        // new 와 함께 호출 되었을 경우
+    } else {
+        // new 없이 호출 되었을 경우
+    }
+}
+```
+
+## 자바스크립트 네이티브 / 내장 객체 생성자
+자바스크립트에서 제공하는 9가지 기본적인 객체 생성자가 있다.
+
+- Number();
+- String();
+- Boolean();
+- Object();
+- Array();
+- Function();
+- Date();
+- RegExp();
+- Error();
+
+Math 는 네이티브 객체 생성자가 아니다. 편의 상 제공하는 정적 객체일 뿐이다. (예: Math.PI)
+
+# 리터럴
+리터럴(literal)은 new 키워드를 사용하지 않아도 네이티브 객체 값을 만들 수 있는 축약표현이다.
+자바스크립트 네이티브 생성자의 리터럴 예시는 native functions 포스트를 참고하면 좋다.
+
+리터럴과 관련되서 주의사항이 몇 가지 있다.
+- Number, String, Boolean 객체의 리터럴은 객체가 아닌 원시값을 만든다.
+    - typeof로 확인해보면 object가 아니라 number, string, boolean 이다.
+    - 그렇지만 객체에서 제공하는 속성이나 메소드를 원시값도 사용할 수 있다.
+    - 리터럴에서 메소드에 접근하면 리터럴 값에 해당하는 Wrapper를 만들어 속성이나 메소드를 사용한 후 다시 원시값으로 돌아간다.
+- Number, String, Boolean은 new 키워드 없이 실행하면 객체가 아닌 원시값을 반환한다.
+- 함수객체(Function)의 typeof 는 항상 function을 반환한다.
+- 정규식객체(RegExp)의 typeof 는 항상 object를 반환한다.
+
+# 원시값
+원시값(null, undefined, '문자열', 10, true, false)은 객체가 아니다. 
+null, undefined 는 객체로 변환되지 않으므로 toString() 과 같은 메소드를 사용할 수 없다. 
+```javascript
+console.log(typeof null); // 신기하게도 object를 반환한다.
+console.log(typeof undefined); // undefined를 반환한다.
+```
+
+# call by value VS call by reference
+- 원시형은 값을 저장한다.
+- 객체는 주소를 저장한다.
+
+```javascript
+var num1 = new Number(10); // 원시형은 객체로 생성해도 원시값을 생성한다.
+var num2 = num1; // 값을 복사한다.
+
+num1++;
+
+console.log(num1); // 값이 1 증가한 11이 표시된다.
+console.log(num2); // 증가하기 전에 복사된 값으로 10이 표시된다.
+
+
+var obj1 = { // 객체를 생성한다.
+  num: 10
+};
+var obj2 = obj1; // 객체 주소를 복사한다.
+
+obj1.num++;
+
+console.log(obj1); // 값이 1 증가한 11이 포함된 객체가 표시된다.
+console.log(obj2); // 주소가 복사되었기 때문에 obj1과 동일하게 값이 1 증가한 11이 포함된 객체가 표시된다.
+``` 
+
+# constructor 속성
+- 인스턴스의 constructor 속성은 자신의 생성자 함수를 가리킨다.
+- 원시값도 constructor 속성이 있는데, 동일하게 생성자 함수를 가리킨다.
+- Object  생성자를 사용해 생성한 객체 인스턴스(generic 객체)는 constructor 가 Object 를 참조한다.
+
+```javascript
+var obj = {};
+console.log(obj.constructor === Object);
+console.log(obj.constructor);
+```
+
+# instanceof 연산자
+- instanceof 연산자로 객체가 특정 생성자 함수의 인스턴스인지 확인할 수 있다.
+- 단, 원시값을 해당 객체의 instance 인지 묻는다면 항상 false 이다.
+- constructor 를 통해 인스턴스 타입을 확인할 수도 있지만 instanceof 를 사용하는 것이 더 좋다. 이유는 constructor 프로퍼티는 덮어쓸 수 있기 때문에 정확하지 않다.
+
+
+```javascript
+// 사용자 정의 객체 생성자
+var Person = function () {
+  this.age = 30;
+};
+
+// 인스턴스 생성
+var person = new Person();
+
+// instanceof로 특정 생성자함수의 인스턴스인지 확인이 가능하다.
+console.log(person instanceof Person);
+
+// 네이티브 생성자도 동일하다.
+console.log(new Array(10) instanceof Array);
+
+// 자바스크립트의 모든 객체는 Object 생성자를 상속하므로 항상 true 이다.
+console.log(person instanceof Object);
+
+// 원시값을 해당 객체의 instance인지 묻는다면 항상 false 이다.
+console.log('stringLiteral' instanceof String);
+```
+
+- 
+- 생성자를 통해 만든 인스턴스에 속성을 동적으로 추가할 수 있다.
+
+# 객체 내부 메소드
+- 자바스크립트는 프로퍼티를 처음 객체에 추가할 때 **[[Put]]** 이라는 내부 메소드를 호출한다.
+- 기존 프로퍼티에 새 값을 할당할 때는 **[[Set]]** 이 호출된다.
+
+# 자바스크립트 객체와 Object()는 다르다.
+- Object() 는 자바스크립트에서 표현되는 특정한 자료형의 값 중 하나이다.
+- Array() 와 같은 객체는 자바스크립트 객체에 포함되지만, Object()는 아니다.
+
+# 객체 체이닝
+자바 스크립트 복합 객체 (complex object)는 어떤 자료형이든 속성으로 포함할 수 있다.
+객체 안에 객체를 포함할 수 있다.
+
+# 객체의 속성을 제거하는 유일한 방법: delete
+delete 키워드는 객체의 속성을 제거하는 유일한 방법이다. 
+단, delete는 프로토타입 체인에 있는 속성을 제거하지는 않는다.
+속성을 undefined, null 로 지정하면 값이 undefined, null 로 변경될 뿐 키 값은 그대로 있다.
+ 
+# 호스트객체, 네이티브 객체
+- 호스트 객체: 자바스크립트를 실행하는 환경(ex. 브라우저)에서 사용할 수 있는 객체(ex. 브라우저의 window 객체)
+- 네이티브 객체: 자바스크립트 객체들
+
+# module pattern: 비공개(private) 멤버와 특권(privileged) 멤버
+자바스크립트에서도 비공개 변수를 만들 수 있다. 
+공개하지 않고 싶은 변수는 감추고 이 비공개 변수에 접근할 수 있는 특권을 가진 메소드를 노출시킨다.
+모듈패턴이 이 형식을 갖추고 있다.
+모듈패턴은 즉시실행함수표현식(IIFE)을 사용해서 싱글톤 객체를 만든다.
+
+```javascript
+var person = (function() {
+    var age = 25;
+    
+    return {
+        name: 'Kyunghwa',
+        getAge: function() {
+            return age;
+        },
+        growOlder: function() {
+            age++;
+        }
+    }
+})();
+
+console.log(person.name);
+console.log(person.getAge());
+
+person.age = 100;
+console.log(person.getAge());
+
+person.growOlder();
+console.log(person.getAge());
+```
+
+모듈패턴을 조금 변형한 모듈 노출 패턴(revealing module pattern) 도 있다.
+모든 변수와 메소드를 IIFE 상단에 정의해두고 반환하는 객체에 정의했던 변수와 메소드를 할당한다.
+
+```javascript
+var person = (function() {
+    var age = 25;
+    
+    function getAge() {
+        return age;
+    }
+    
+    function growOlder() {
+        age++;
+    }
+    
+    return {
+        name: 'Kyunghwa',
+        getAge: getAge,
+        growOlder: growOlder
+    }
+})();
+```
+
+선호도의 차이이다. 변수와 함수를 같이 선언할 수 있기 때문에 모듈 노출 패턴을 더 선호하는 사람들도 있다.
+
+## 생성자 비공개 멤버
+생성자 함수 내부에 모듈 패턴과 비슷한 패턴을 사용하면 인스턴스마다 비공개 데이터를 만들 수 있다.
+
+```javascript
+function Person(name) {
+  var age = 25;
+  
+  this.name = name;
+  
+  this.getAge = function() {
+    return age;
+  };
+  
+  this.growOlder = function() {
+    age++;
+  };
+}
+
+var person1 = new Person('Kyunghwa');
+var person2 = new Person('YooKH');
+
+console.log(person1.name);
+console.log(person2.name);
+
+console.log(person1.getAge());
+console.log(person2.getAge());
+
+person1.growOlder();
+
+console.log(person1.getAge());
+console.log(person2.getAge());
+```
+
+모든 인스턴스가 공유하는 비공개 데이터가 필요하면 다음과 같이 구현하면 된다.
+
+```javascript
+var Person = (function() {
+    var age = 25; // 모든 인스턴스가 이 값을 공유한다.
+    
+    function InnerPerson(name) {
+        this.name = name;
+    }
+    
+    InnerPerson.prototype.getAge = function() {
+        return age;
+    };
+    
+    InnerPerson.prototype.growOlder = function() {
+        age++;
+    };
+    
+    return InnerPerson;
+})();
+
+var person1 = new Person('Kyunghwa');
+var person2 = new Person('YooKH');
+
+console.log(person1.name);
+console.log(person2.name);
+
+console.log(person1.getAge());
+console.log(person2.getAge());
+
+person1.growOlder();
+
+console.log(person1.getAge());
+console.log(person2.getAge());
+```
+

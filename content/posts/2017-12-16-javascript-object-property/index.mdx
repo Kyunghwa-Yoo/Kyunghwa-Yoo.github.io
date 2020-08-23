@@ -1,0 +1,227 @@
+---
+title: 자바스크립트 객체 프로퍼티
+date: 2017-12-16 10:00:00 +0900
+categories:
+- javascript
+tags:
+- javascript
+---
+
+# 객체 프로퍼티 종류
+- 데이터 프로퍼티 (data property): 값을 포함하는 프로퍼티
+- 접근자 프로퍼티 (accessor property): 값을 포함하지 않고, 프로퍼티를 읽을 때 쓰는 getter와 값을 설정할 때 쓰는 setter로 구성되어 있다.
+getter만 서술하면 읽기전용이 되는 것이고, setter만 서술하면 쓰기전용으로 되는 것이다.
+
+```javascript
+var person = {
+  _name: 'Kyunghwa', // 데이터 프로퍼티
+  get name() { // getter 접근자 프로퍼티
+    return this._name;
+  },
+  set name(value) { // setter 접근자 프로퍼티
+    this._name = value;
+  }
+};
+
+console.log(person.name);
+person.name = 'YooKH';
+console.log(person.name);
+```
+
+프로퍼티를 정의하는데 Object.defineProperty 를 사용한다.
+이 때, 서술자에 없는 속성은 모두 false가 되니 필요한 속성은 반드시 서술자에 포함시켜 두어야 한다.
+
+## 데이터 프로퍼티, 접근자 프로퍼티 공통 속성
+- [[Enumerable]] : 프로퍼티가 열거 가능한지 여부
+- [[Configurable]] : 값을 변경하는 것이 가능한지 여부
+
+```javascript
+var person = {
+    name: 'Kyunghwa'
+};
+
+Object.defineProperty(person, 'name', { // Object.defineProperty 를 이용해서 name 이 열거가 불가능하도록 설정
+    enumerable: false
+});
+
+console.log('name' in person); // name 속성이 존재하지만
+console.log(person.propertyIsEnumerable('name')); // enumerable 값이 false 이다.
+
+var properties = Object.keys(person); // person의 속성들을 모아서
+console.log(properties.length); // 개수를 찍어보면 name 속성을 포함하지 않고 0이 출력된다.
+
+Object.defineProperty(person, 'name', { // name 속성을 수정이 불가능하도록 설정
+    configurable: false
+});
+
+delete person.name; // 삭제가 안된다.
+console.log('name' in person);  // name 필드가 존재한다.
+console.log(person.name); // name 필드가 정상적으로 출력된다.
+
+Object.defineProperty(person, 'name', { // configurable 프로퍼티를 한번 false 하면 다시 true 로 변경할 수 없다. 에러 발생!
+    configurable: true
+});
+```
+
+## 데이터 프로퍼티 속성
+- [[Value]] : 값을 저장한다.
+- [[Writable]] : 값을 저장할 수 있는지 여부
+
+```javascript
+var person = {};
+
+Object.defineProperty(person, 'name', {
+    value: 'Kyunghwa',
+    enumerable: true,
+    configurable: true,
+    writable: true
+});
+
+console.log(person);
+```
+
+## 접근자 프로퍼티 속성
+- [[Get]] : getter 역할
+- [[Set]] : setter 역할
+
+```javascript
+var person = {
+    _name: 'Kyunghwa'
+};
+
+Object.defineProperty(person, 'name', {
+    get: function() {
+        return this._name;
+    },
+    set: function(value) {
+        this._name = value;
+    },
+    enumerable: true,
+    configurable: true
+});
+
+console.log(person.name);
+```
+
+## 여러 프로퍼티 정의하기
+Object.defineProperties 메소드를 이용해서 여러 개의 프로퍼티를 한번에 정의할 수 있다.
+
+```javascript
+var person = {};
+
+Object.defineProperties(person, {
+    _name: {
+        value: 'Kyunghwa',
+        enumerable: true,
+        configurable: true,
+        writable: true
+    },
+    name: {
+        get: function() {
+            return this._name;
+        },
+        set: function(value) {
+            this._name = value;
+        },
+        enumerable: true,
+        configurable: true
+    }
+});
+
+console.log(person.name);
+```
+
+## 프로퍼티 속성 가져오기
+Object.getOwnPropertyDescriptor 메소드를 이용해서 프로퍼티 속성들을 가져올 수 있다.
+
+```javascript
+var person = {
+    name: 'Kyunghwa'
+};
+
+console.log(Object.getOwnPropertyDescriptor(person, 'name'));
+```
+
+# 객체 수정 방지
+객체 내부 속성 중 하나인 [[Extensible]] 이 false일 경우 새로운 프로퍼티를 추가할 수 없다.
+기본값은 true 이다.
+`Object.isExtensible()` 로 Extensible 속성 값을 알 수 있다. 
+
+Extensible 값을 false 로 만드는 방법은 3가지가 있다.
+
+## Object.preventExtensions()
+
+```javascript
+var person = {
+    name: 'Kyunghwa'
+};
+
+console.log(Object.isExtensible(person));
+Object.preventExtensions(person);
+console.log(Object.isExtensible(person));
+
+person.age = 30;
+console.log(person.age);
+```
+
+## Object.seal()
+`Object.preventExtensions()` 에 추가로 모든 프로퍼티의 configurable 값을 false 로 설정한다. 
+즉 새 프로퍼티를 추가할 수 없는 것은 물론이고, 이미 있는 프로퍼티를 제거하거나 프로퍼티의 종류를 변경(데이터를 접근자로 혹은 접근자를 데이터로) 하는 것도 불가능하다.
+`Object.isSealed()` 로 seal 여부를 알 수 있다.
+
+```javascript
+var person = {
+    name: 'Kyunghwa'
+};
+
+console.log(Object.isExtensible(person));
+console.log(Object.isSealed(person));
+
+Object.seal(person);
+
+console.log(Object.isExtensible(person));
+console.log(Object.isSealed(person));
+
+person.age = 30;
+console.log(person.age);
+
+person.name = 'YooKH';
+console.log(person.name);
+
+delete person.name; // 삭제가 불가능하다. 이 부분이 seal 의 특이점이다.
+console.log('name' in person);
+console.log(person.name);
+```
+
+## Object.freeze()
+`Object.seal()` 에 추가로 쓰기도 안된다. 객체를 읽기전용으로 만들어버린다.
+`Object.isFrozen()` 으로 freeze 여부를 알 수 있다.
+
+```javascript
+var person = {
+    name: 'Kyunghwa'
+};
+
+console.log(Object.isExtensible(person));
+console.log(Object.isSealed(person));
+console.log(Object.isFrozen(person));
+
+Object.freeze(person);
+
+console.log(Object.isExtensible(person));
+console.log(Object.isSealed(person));
+console.log(Object.isFrozen(person));
+
+person.age = 30;
+console.log(person.age);
+
+person.name = 'YooKH';
+console.log(person.name);
+
+delete person.name;
+console.log(person.name);
+
+var desc = Object.getOwnPropertyDescriptor(person, 'name');
+console.log(desc.configurable);
+console.log(desc.writable);
+```

@@ -1,0 +1,52 @@
+---
+title: 나는 자바스크립트 개발자다 2nd Meetup 후기
+date: 2017-05-17 00:00:00 +0900
+categories:
+- conference
+tags:
+- conference
+---
+
+# 나는 자바스크립트 개발자다 2nd Meetup 후기
+
+## 세션1 : 프론트엔드 코딩 컨벤션 자동화 도구 - 김태곤
+> https://www.facebook.com/miriya.lee/videos/g.1413798668880301/10212422557701091
+
+* javascript coding standards
+* eslint, stylelint 랑은 조금 다름
+
+1. EditorConfig
+    * 에디터 설정 자동화
+    * .editorconfig
+2. stylefmt
+    * CSS 파일이나 SCSS 파일의 컨벤션 강제
+3. prettier
+    * 자바스크립트 파일의 컨벤션 강제
+4. Husky + lint-stage
+
+## 세션2 : 리액트 퍼포먼스 개선기 - 천민호
+> https://www.facebook.com/miriya.lee/videos/g.1413798668880301/10212422695504536
+
+* react-addons-perf: 성능 측정 도구
+
+* react lifecycle 중 shouldComponentUpdate
+    * props가 변경되었을때 render를 다시 할지 말지 결정
+* PureComponent
+    * shallowCompare이기 때문에 조심
+* Store selector
+
+* memoization에 대해 공부하기
+
+## 세션3 : TDD로 구현하는 "초"간단 React 컴포넌트 - 김훈민
+> https://www.facebook.com/miriya.lee/videos/g.1413798668880301/10212422830467910
+
+* jest, enzyme
+* 테스트코드는 가독성이 중요하다.
+* given(어떤 상황에서) > when(무엇을 하면)) > then(무엇이 되어야 한다.)
+* setup > excersice > verify
+* 테스트코드가 문제가 있을 때 리팩토링 같은 것을 하면 안된다. 문제점을 찾기 어려워질 수 있다.
+* 각각의 테스트는 독립적이어야 한다. 테스트데이터가 오염되지 않도록 해야 한다.
+
+## 세션4 : React 애플리케이션 아키텍처 (부제: 아무도 알려주지 않아서 혼자 삽질했다.) - 손병대
+> https://www.facebook.com/miriya.lee/videos/g.1413798668880301/10212423144715766
+

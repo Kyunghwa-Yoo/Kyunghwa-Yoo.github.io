@@ -1,0 +1,67 @@
+---
+title: Webpack Loader
+date: 2017-10-14 10:00:00 +0900
+categories:
+- Webpack
+tags:
+- Webpack
+- javascript
+---
+
+## Webpack Loader
+> webpack can only process Javascript natively, but loaders are used to transform other resources into Javascript. By doing so, every resource forms a module
+
+* 웹팩은 자바스크립트 파일만 처리가 가능하도록 되어 있다.
+* loader 를 이용하여 다른 형태의 웹 자원들을 (img, css, …) js로 변환하여 로딩
+
+```js
+module.exports = {
+    entry: {
+        // …
+    },
+    output: {
+        // …
+    },
+    module: {
+        rules: [
+            { test: /\.css$/, use: ['style-loader', 'css-loader'] }
+        ]
+    }
+};
+```
+
+* 번들링을 할 때 파일별로 특정 동작을 실행하게 하는 것이 module의 역할
+* rules 밑에 있는 것들이 loader 이다.
+* loader에서 모듈 로딩 순서는 배열의 요소 **오른쪽에서 왼쪽** 으로 진행된다.
+
+```js
+{
+    test: /backbone/,
+    use: [
+        'expose-loader?Backbone',
+        'imports-loader?_=underscore,jquery'
+        // 순서대로 (1) jQuery, (2) underscore 로딩
+    ]
+}
+```
+
+* 위 설정 파일을 webpack으로 번들링 한 결과물은 아래와 같다.
+
+```js
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;
+VAR _ = __webpack_require__(0);
+var jquery = __webpack_require__(1);
+```
+
+## Babel Loader
+* preset: Babel 플러그인 리스트
+* Tree Shaking: 모듈에서 사용되지 않는 것들은 추가하지 않는 것
+
+```js
+// .babelrc
+{
+    presets: ['react', 'es2015']
+}
+```
+
+* babel은 old 브라우저 들에서 최신 ES6 문법이 동작하도록 트랜스컴파일 해주는 컴파일러

@@ -1,0 +1,343 @@
+---
+title: YOU DON'T KNOW JS - 타입과 문법
+date: 2018-02-20 10:00:00 +0900
+categories:
+- javascript
+tags:
+- javascript
+---
+
+# 타입
+
+```javascript
+console.log(typeof null);   // object
+console.log(typeof function(){});   // function 하지만 실제로는 object 의 하위 타입이다.
+console.log(typeof {});     // object
+console.log(typeof []);     // object
+```
+
+- 유일하게 **null** 만 typeof 값이 **object** 로 나오는 버그가 있다.
+- 배열과 함수는 객체다. 배열은 숫자 index 를 가지며, length 프로퍼티가 자동으로 관리되는 추가 특성을 가진 객체일 뿐이며 함수는 내부 프로퍼티 [[Call]] 을 통해서 호출이 가능한 객체일 뿐이다.
+
+- undefined 와 not defined 는 다르다.
+    - undefined: 접근가능한 스코프에 변수가 선언되었으나 현재 아무런 값도 할당되지 않은 상태
+    - not defined: 접근가능한 스코프에 변수 자체가 선언조차 되지 않은 상태
+
+    ```javascript
+    var a;
+
+    console.log(a); // undefined
+    console.log(b); // not defined
+    ```
+
+- **typeof** 를 이용해서 특정 변수나 함수가 정의되어 있는지 판별할 때 도움이 되긴 한다.
+
+```javascript
+if (typeof DEBUG !== 'undefined') {
+    console.log('디버깅을 시작합니다.');
+}
+```
+
+# 값
+## 문자열과 배열
+- 문자열과 배열은 비슷하게 length 프로퍼티가 있고 indexOf() 메소드와 concat() 메소드가 있다.
+- 하지만 문자열은 불변값(Immutable)이며, 배열은 가변값(Mutable)이다.
+- 문자열은 불변값이므로 문자열 메서드는 그 내용을 바로 변경하지 않고 항상 새로운 문자열을 생성한 후 반환한다. 반면에 대부분의 배열 메서드는 그 자리에서 곧바로 원소를 수정한다.
+
+```javascript
+var a = 'foo';
+var b = ['f','o','o'];
+
+// length 프로퍼티
+console.log(a.length);
+console.log(b.length);
+
+// indexOf() 메소드
+console.log(a.indexOf('f'));
+console.log(b.indexOf('f'));
+
+// concat() 메소드
+console.log(a.concat('bar'));
+console.log(b.concat(['b','a','r']));
+
+// 값을 변경할 경우
+a[1] = 'f';
+b[1] = 'f';
+
+console.log(a); // a 는 불변값
+console.log(b); // b 는 가변값
+
+var c = a.toUpperCase();
+console.log(a === c);
+
+b.push('!!');
+console.log(b);
+```
+
+## 숫자형
+- 정수에 `toFixed()` 함수를 쓰기 위해서는 도트연산자(.) 가 2개 필요하다. 첫 번째 도트연산자를 소수점으로 계산하기 때문이다.
+
+```javascript
+console.log(42.toFixed(3));     // Syntax Error
+console.log(42..toFixed(3));    // 42.000
+```
+
+- 신기하게도 `0.1 + 0.2 === 0.3` 은 **false** 다. 0.1 + 0.2 가 정확하게 0.30000000000000004 라고 한다.
+
+    ``` javascript
+    console.log(0.1 + 0.2 === 0.3);
+    console.log(0.1 + 0.2);
+    ```
+
+    - 이진 부동 소수점 숫자의 부작용으로 알려진 것인데, 대응책은 ES6에서 Number.EPSILON 으로 오차값을 미리 정의해놓았다.
+    
+    ```javascript
+    Math.abs(n1 - n2) < Number.EPSILON; // 미세한 오차보다 작은지를 통해 비교할 수 있다.
+    ```
+
+- ES6부터 `Number.isInteger()` 로 어떤 값의 정수 여부를 확인할 수 있다.
+- NaN 은 숫자가 아니다(Not A Number) 라는 뜻이지만 typeof 로 확인해보면 'number' 를 가리킨다.
+- `isNaN()` 은 숫자가 아닌 다른 타입의 정상적인 값도 true 를 가리킨다. ES6 에서는 이를 보완한 `Number.isNaN()` 을 쓸 수 있다.
+- 0으로 값을 나누면 에러가 아닌 **Infinity(Number.POSITIVE_INFINITY)** 값이 나온다. 음수값을 0으로 나누면 **Number.NEGATIVE_INFINITY** 가 나온다.
+- 0과 -0 은 확실하게 구분하기 어렵다. -0 은 값의 부호로 방향을 나타내야 하는 프로그램에서 주로 사용된다.
+- ES6 에서는 특이한 동등비교를 할 때를 위해 `Object.is()` 를 만들었다. 잡다한 예외를 걱정하지 않아도 동등한지 비교할 수 있다.
+- 원시값을 레퍼런스 형태로 넘겨도 레퍼런스공유가 이뤄지지 않는다.
+
+```javascript
+function foo(x) {
+  x = x + 1;
+}
+
+var a = 2;
+var b = new Number(a);
+
+foo(b); 
+console.log(b); // 2
+```
+
+# 네이티브
+- 네이티브는 내장함수를 가리킨다. 내장함수의 결과물은 예상과는 다르게 동작하는 부분들이 있다.
+
+```javascript
+var a = new String('abc');
+console.log(typeof a); // String 이 아닌 object
+console.log(a instanceof String) // true
+console.log(Object.prototype.toString.call(a)); // [object String]
+```
+
+## 내부 프로퍼티 [[Class]]
+- typeof 가 'object' 인 값(배열)에는 내부 프로퍼티 [[Class]] 가 추가로 붙는다.
+- [[Class]] 는 직접 접근할 수 없고, Object.prototype.toString() 에 값을 넣어 호출해서 엿볼 수 있다.
+
+```javascript
+console.log(Object.prototype.toString.call([1,2,3]));
+console.log(Object.prototype.toString.call(/regex/i));
+console.log(Object.prototype.toString.call(null));
+console.log(Object.prototype.toString.call(undefined));
+```
+
+## 정규표현식 RegExp()
+- 정규표현식은 리터럴 형식으로 정의하는 것이 좋다. 구문이 쉽고 성능상 이점(자바스크립트 엔진이 실행 전 정규 표현식을 미리 컴파일 후 캐시한다.)이 있다. RegExp() 는 정규표현식 패턴을 동적으로 정의할 경우 의미있는 유틸리티이다.
+
+## Symbol
+- 충돌 염려 없이 객체 프로퍼티로 사용 가능한, 특별한 유일값이다. (그렇다고 절대적으로 유일함이 보장되지는 않는다.)
+- Symbol() 은 앞에 new 를 붙이지 않고 생성하는 유일한 네이티브 생성자다.
+
+```javascript
+var mySymbol = Symbol('my own symbol');
+console.log(mySymbol);
+console.log(mySymbol.toString());
+console.log(typeof mySymbol);
+
+var a = {};
+a[mySymbol] = 'foobar';
+
+console.log(Object.getOwnPropertySymbols(a));
+```
+
+- Symbol은 private property는 아니지만 본래의 사용 목적에 맞게 대부분 private 혹은 특별한 프로퍼티로 사용한다. 습관적으로 _(언더스코어) 를 변수명 앞에 붙였던 일들을 대체할 가능성이 높다.
+
+# 강제변환
+- 강제변환도 암시적인 강제변환이 있고 명시적인 강제변환이 있다.
+
+```javascript
+var a = 42;
+var b = a + ''; // 암시적
+var c = String(a); // 명시적
+```
+
+- 아무리 의도를 명확하게 가지고 암시적인 강제변환을 했다 하더라도 그 코드를 자기 혼자만 보는 것이 아닐 수 있다. 다른 사람들은 자신의 의도를 알 수 없다.
+
+## JSON 문자열화
+- JSON-safe 값들은 모두 JSON으로 문자열화 할 수 있다.
+- JSON-safe 가 아닌 값들은 다음과 같다.
+    - undefined, function(함수값), Symbol: 자동으로 제외된다. 배열에 포함되어 있을 경우 null 로 변경된다.
+    - 순환형 참조 객체: 에러 발생
+
+```javascript
+var a = {
+  b: 'b',
+  c: 'c',
+  d: undefined,
+  f: function() {},
+  s: Symbol('symbol')
+};
+
+//a.a = a; // 에러 발생
+
+console.log(JSON.stringify(a));
+```
+
+- 부적절한 JSON 값을 문자열화 할 때는 `.toJSON()` 에 문자열화 할 값들을 정의한다. 정의만 할 뿐 문자열화는 `JSON.stringify()` 가 처리한다.
+- `JSON.stringify()` 에는 2, 3번째 매개변수가 있다. [MDN](https://developer.mozilla.org/ko/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify)
+
+## 숫자 아닌 값 -> 숫자
+- true: 1
+- false: 0
+- undefined: NaN
+- null: 0
+
+```javascript
+var a = {
+  valueOf: function () {
+    return '42';
+  }
+};
+
+var b = {
+  toString: function() {
+    return '42';
+  }
+};
+
+var c = [4, 2];
+c.toString = function() {
+  return this.join('');
+};
+
+console.log(Number(a));         // 42
+console.log(Number(b));         // 42
+console.log(Number(c));         // 42
+console.log(Number(''));        // 0
+console.log(Number([]));        // 0
+console.log(Number(['abc']));   // NaN
+```
+
+## Boolean
+- 자바스크립트의 모든 값은 다음 둘 중 하나다.
+    1. 불리언으로 강제변환하면 false 가 되는 값
+    2. 1번을 제외한 나머지 (즉, 명백히 true 인 값)
+- falsy 한 값은 다음과 같다.
+    - undefined
+    - null
+    - false
+    - +0, -0, NaN
+    - ""
+
+## 명시적 강제변환
+- `42.toString()` 은 박싱 과정이 들어가기 때문에 '명시적으로, 암시적인' 작동이다.
+- `+'32'` 는 숫자로 명시적 강제변환한다.
+- ~ (틸드) 연산자는 32비트 숫자로 강제변환 후 NOT 연산을 한다. 각 비트를 거꾸로 뒤집는다.
+    - ~x 는 -(x+1) 과 같다. 이 점을 이용해서 문자열이 다른 문자열에 포함되어 있는지 검증할 때 더 깔끔한 코드를 만들 수 있다.
+    
+    ```javascript
+    var a = 'acdefg';
+    if (a.indexOf('b') === -1) {
+        console.log('깔끔하지 않은 코드다. Leaky Abstraction, 즉 경계 값 -1을 실패로 정해버렸다.');
+    }
+
+    if (~a.indexOf('b')) {
+        console.log('b가 a에 있을 경우 들어온다. ~a.indexOf("b") 값이 0이 아니기 때문이다.');
+    } else {
+        console.log('b가 a에 없을 경우 -1을 반환하고 -(-1 +1) = 0 이므로 falsy 값인 0이 나와 if 문을 들어가지 않는다.');  
+    }
+    ```
+
+## 암시적 강제변환
+- \+ 연산의 한 쪽 피연산자가 문자열이면 + 는 문자열 붙이기 연산을 한다.
+
+    ```javascript
+    var a = {
+    valueOf: function() {
+        return 42;
+    },
+    toString: function() {
+        return 2;
+    }
+    };
+
+    console.log(a + '');    // 빈 문자열과 더할 경우는 valueOf() 를 호출한 후 문자열 붙이기를 한다.
+    console.log(String(a)); // String() 은 toString 을 호출할 뿐이다.
+    ```
+
+- &&, \|\| 연산자는 우선 첫 번째 피연산자의 불리언 값을 평가한다. 피연산자가 불리언이 아니면 먼저 ToBoolean 로 강제변환 후 평가를 계속한다.
+    - && 연산자는 결과가 true 면 두 번째 피연산자의 값을, false면 첫 번째 피연산자 값을 반환한다.
+    - \|\| 연산자는 결과가 true 면 첫 번째 피연산자 값을, false면 두 번째 피연산자 값을 반환한다.
+- Symbol 은 암시적 강제변환이 안된다.
+
+    ```javascript
+    var s1 = Symbol('좋아');
+    console.log(String(s1));
+
+    var s2 = Symbol('구려');
+    console.log(s2 + '');
+    ```
+
+- 자바스크립트의 동등 비교 (느슨한 비교(==), 엄격한 비교(===)) 관련 테이블 [참고](https://dorey.github.io/JavaScript-Equality-Table/)
+ 
+# 문법
+- Statement는 하나 이상의 Expression으로 구성되며, 각 Expression은 연산자로 연결할 수 있고 Expression은 더 작은 Expression으로 나눌 수 있다.
+- 변수를 선언하는 문을 선언문(Declare Statement)이라고 하며, 값을 할당하는 표현식을 할당표현식(Assignment Expression)이라고 한다.
+- 모든 Statement는 완료 값을 가진다. 하지만 그 값을 개발자가 내부 프로그램에서 사용할 수는 없다.
+    - 콘솔창에서 변수를 선언하면 undefined 가 뜬다. 이 것이 완료 값이며 이 값을 따로 이용할 수는 없다.
+- delete 연산자는 부수효과가 있다. delete가 유효한/허용된 연산일 경우 true 를, 그 외에는 false를 반환한다.
+- else if 라는 자바스크립트 문법은 없다. 파싱을 하면 else 문 안에 다시 if와 else를 넣게 된다.
+- 연산자 우선순위에서 &&가 \|\|보다 높다. 그래서 `a || b && c` 는 `a || (b && c)` 가 된다.
+- 삼항 연산자 **? :** 는 \|\| 보다 우선순위가 낮다.
+- `try finally` 문에서 try 문 안에서 return 을 하면 finally 가 먼저 실행되고 return 된다.
+
+```javascript
+function foo() {
+    try {
+        return 42;
+    } finally {
+        console.log('finally');
+    }
+    console.log('never occurred');
+}
+
+console.log(foo());
+```
+
+- finally 문에서 return 을 하면 try 문의 return 을 덮어씌운다.
+
+```javascript
+function foo() {
+  try {
+    return 42;
+  } finally {
+    
+  }
+}
+
+function bar() {
+  try {
+    return 42;
+  } finally {
+    return;
+  }
+}
+
+function baz() {
+  try {
+    return 42;
+  } finally {
+    return 'Hello';
+  }
+}
+
+console.log(foo()); // 42
+console.log(bar()); // undefined
+console.log(baz()); // "Hello"
+```
+

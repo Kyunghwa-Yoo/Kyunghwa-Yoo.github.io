@@ -1,0 +1,63 @@
+---
+title: Webpack Entry & Output
+date: 2017-10-13 00:00:00 +0900
+categories:
+- Webpack
+tags:
+- Webpack
+- javascript
+---
+
+## Entry
+* Webpack으로 묶은 모든 라이브러리들을 로딩할 시작점
+* String, Array, Object 타입 모두 가능하다.
+* 한번만 로딩하면 되는 것들을 구분하기 위해 엔트리포인트를 나눠서 할 수 있다.
+* output에서 \[name].js 로 하면 entry의 키의 이름에 맞춰서 결과를 산출한다.
+
+## Output
+* entry에서 설정하고 묶은 파일의 결과값을 설정
+
+```js
+output: {
+    path: path.resolve(__dirname, 'dust'),
+    filename: 'bundle.js'
+    // filename: '[name].js' 처럼 entry 목록의 파일명으로 나눠서 생성할 수 있다.
+}
+```
+
+* Output Name Options
+    * \[name]: 엔트리 명에 따른 output 파일명 생성
+    * \[hash]: 특정 web pack build에 따른 output 파일명 생성
+        * 빌드할때마다 다른 해시값으로 
+    * \[chunkhash]: 특정 webpack chunk에 따른 output 파일명 생성
+        * 청크에 따라서 해시값이 다른 아웃풋 파일을 생성
+        * 청크에 따라서 아웃풋을 명확하게 해줬을때 나중에 추적이 쉽다. 
+        * 청크해시가 공식 권고사항
+* path.join()
+    * 해당 API가 동작되는 OS의 파일 구분자를 이용하여 파일 위치를 조합한다.
+    * OS의 파일 구분자를 사용하기 때문에 OS마다 결과값이 다르다.
+
+```js
+path.join('/foo', 'bar', 'bar/asdf');
+// Returns: '/foo/bar/baz/asdf'
+```
+
+* path.resolve() 
+    * join()의 경우 그냥 문자열을 합치지만, resolve는 오른쪽에서 왼쪽으로 파일 위치를 구성해가며 유효한 위치를 찾는다.
+    * 만약 결과값이 유효하지 않으면 현재 디렉토리가 사용된다. 반환되는 위치 값은 항상 absolute URL 이다.
+
+```js
+path.resolve('/foo/bar', './baz');
+// Returns: '/foo/bar/baz'
+
+path.resolve('/foo/bar', '/tmp/file/');
+// Returns: '/tmp/file/'
+
+path.resolve('wwwroot', 'static_files/png/', '../gif/image.gif');
+// if the current working directory is /home/myself/node,
+// this Returns: '/home/myself/node/wwwroot/static_files/gif/image.gif'
+```
+
+* https://nodejs.org/api/path.html
+
+

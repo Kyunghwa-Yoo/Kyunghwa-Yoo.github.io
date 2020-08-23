@@ -1,0 +1,210 @@
+---
+title: 하나의 Git repository 에서 여러 private remote 에 push 하기
+date: 2018-06-25 00:00:00 +0900
+categories:
+- git
+tags:
+- git
+- aws
+---
+
+# 문제제기
+일반적으로 Git에서 하나의 repository 에 하나의 origin remote repository 를 연결해서 사용한다.
+그런데 만약 하나의 repository 에서 브랜치별로 다른 remote repository 에 연결해서 쓰고 싶을 땐 어떻게 해야 될까?
+그것도 두 remote repository 가 서로 다른 인증정보를 필요로 하는 private repository 일 경우에 말이다.
+
+## 예시
+예를 들어 보자.
+
+EXAMPLE 이라는 하나의 local repository 가 있다.
+이 repository 에는 master 브랜치와 release 브랜치가 있다.
+
+그리고 A, B 두 개의 AWS 계정이 있다. 
+첫 번째 A 계정에는 DEV 라는 CodeCommit repository 가 있다.
+두 번째 B 계정에는 PROD 라는 CodeCommit repository 가 있다.
+(CodeCommit은 AWS에서 제공하는 VCS 이다.)
+
+여기서 master 브랜치는 A 계정의 DEV repository에 push 해야 한다.
+그리고 release 브랜치는 B 계정의 PROD repository에 push 해야 한다.
+(보안강화를 위해 이런 행동을 한다고 가정한다.)
+
+두 AWS 계정은 당연히 서로 다른 인증정보를 필요로 한다.
+
+이럴 때 어떻게 하면 될까? 평소대로 하면 될까? (그러면 내가 글을 안썼겠지...)
+
+## HTTPS 는 불가능하다.
+다른 개발자분들은 어떨지 모르겠지만, 난 평소에 HTTPS 프로토콜로 Git 작업을 한다.
+이유는 편해서? SSH는 해본 적도 없었고 HTTPS로 잘만 되어 왔기 때문에 굳이 SSH를 할 필요가 없었다.
+
+근데 내가 하나의 컴퓨터에서 2개의 private Git 계정에 붙어 본 적이 있었던가...?
+생각해보면 없었다.
+
+왜냐하면 macOS 는 HTTPS의 경우 git-credential-osxkeychain 방식으로 Git 정보를 저장해놓는데,
+요 놈이 하나의 서비스에 하나의 계정정보밖에 못 저장한다.
+AWS CodeCommit의 경우를 예를 들면, 같은 리젼의 CodeCommit은 하나의 HTTPS credential 밖에 저장할 수 없다.
+"키체인 접근" 앱을 켜서 검색창에 git 을 검색해보면 직접 확인해볼 수 있다.
+만약 다른 계정을 등록하려고 하면 등록이 안된다.
+
+나의 경우 "키체인 접근" 앱에 들어가서 데이터를 삭제한 다음 등록을 시도해서 암호를 입력해야 했다.
+이렇게 하려면 계속 암호를 어딘가에 들고 있어야 하고 (랜덤생성암호일 경우) 일단 졸라 귀찮고 불편하다..
+
+## SSH 프로토콜은 가능하다.
+하지만 SSH 프로토콜은 두 계정의 인증정보를 가지는 것이 가능하다.
+SSH 키를 생성해서 각각 등록절차를 거친다면 가능하다.
+
+지금부터 SSH 프로토콜을 이용해서 두 개의 private remote repository 에 push 해보자!
+
+# STEP BY STEP
+위의 예시대로 진행해보겠다.
+
+## 실습 환경
+- 로컬환경: "EXAMPLE" repository
+    - master 브랜치 (-> A계정의 "DEV" repository 랑 연결)
+    - release 브랜치 (-> B계정의 "PROD" repository 랑 연결)
+- 리모트환경: AWS A계정와 B계정
+    - A 계정: "DEV" CodeCommit repository
+    - B 계정: "PROD" CodeCommit repository
+
+## 순서
+1. `ssh-keygen` 명령어로 SSH key 를 생성한다.
+2. AWS IAM에서 CodeCommit SSH 키 보안증명을 한다.
+3. `~/.ssh/config` 파일에 IAM에서 생성된 SSH 키 ID 를 등록한다.
+4. git remote url 설정을 한다.
+5. TEST 해서 정상 동작을 확인한다.
+
+# SSH key 생성
+SSH key를 다음과 같이 DEV 용과 PROD 용 2개 만든다.
+
+```
+$ ssh-keygen -t rsa -C "dev@example.com"
+Generating public/private rsa key pair.
+Enter file in which to save the key (/Users/username/.ssh/id_rsa): /Users/username/.ssh/id_rsa_dev_example
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in /Users/username/.ssh/id_rsa_dev_example.
+Your public key has been saved in /Users/username/.ssh/id_rsa_dev_example.pub.
+The key fingerprint is:
+SHA256:sSx73L2zJo4noY1avG0uNSY2E7Mfds2eE//pUg9NEV0 dev@example.com
+The key's randomart image is:
++---[RSA 2048]----+
+|               .E|
+|               ..|
+|        .       .|
+|      o. o      .|
+|      .+S  o   o |
+|     .*+B...+ ...|
+|     .+%o=...+...|
+|     .++=.o *o. o|
+|    ...+++.oo+o+.|
++----[SHA256]-----+
+
+$ ssh-keygen -t rsa -C "prod@example.com"
+Generating public/private rsa key pair.
+Enter file in which to save the key (/Users/username/.ssh/id_rsa): /Users/username/.ssh/id_rsa_prod_example
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in /Users/username/.ssh/id_rsa_prod_example.
+Your public key has been saved in /Users/username/.ssh/id_rsa_prod_example.pub.
+The key fingerprint is:
+SHA256:y0hFMdb5RGp86DoWJipvKUj0UHYDsDdsPw48aKGmVCo prod@example.com
+The key's randomart image is:
++---[RSA 2048]----+
+| ....   =o o.    |
+|  oo o o ooo.    |
+| oo*. . . =o.    |
+|.oO o  . o ..    |
+|E*o+ oo S .      |
+|*. .+o.= +       |
+|o.. .o. *        |
+|. .oo  . .       |
+|   o.            |
++----[SHA256]-----+
+```
+
+`~/.ssh` 에 2개의 SSH 키를 만들었다.
+`[filename].pub` 파일이 public 키 이며,
+`[filename]` 파일이 private 키 이다.
+
+확인해보자!
+
+```
+$ cd ~/.ssh
+$ l
+total 0
+drwx------  13 username  staff   416B  6 24 11:02 .
+drwxr-xr-x+ 39 username  staff   1.2K  6 24 11:04 ..
+-rw-r--r--   1 username  staff   342B  6 24 01:26 config
+-rw-------   1 username  staff   1.6K  6 24 11:02 id_rsa_dev_example        // private 키
+-rw-r--r--   1 username  staff   397B  6 24 11:02 id_rsa_dev_example.pub    // public 키
+-rw-------   1 username  staff   1.6K  6 24 11:02 id_rsa_prod_example       // private 키
+-rw-r--r--   1 username  staff   398B  6 24 11:02 id_rsa_prod_example.pub   // public 키
+-rw-r--r--   1 username  staff   2.3K  6 24 01:13 known_hosts
+```
+
+생성된 public key 는 다음과 같다.
+
+```
+$ cat id_rsa_dev_example.pub
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCzpasQc4lsML8NRAaEqi8WLIxjlkG4SYvE2C4IUdHjpEGOY/4JNlmNkLFapkxZVgMq1P/49qjm/Je1nwOGG+mEKXhPZVP3+NVdla/jCbZvLeWoADGJ5TseJnBIwjCUlN3oZpIhrT+vOj7+xjpmGeFpkC66VPWTQ+nANwdvUcGJp4xku2oxABdGKs4veMhsQKOG4t6mCvc9sXfUVaiJ/im+TCBUsrf2xyhURlwZpPSodzKZlsbMRBU7trKbwdV8go/bQZQwzCTTtc2TfM6yoo92c9sfaMbtGenW7slTqL+foztFuyweYIj74HQJkfLSZaQ02AddDv6gBcWvxby07NYX dev@example.com
+$ cat id_rsa_prod_example.pub
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDb5nuzqawJvFKuTJa48j0EpsMYrBAAadHA1hL/K+Yj2WzFcnBSsYV87SOC5OTl53Gc93hRe34eUaVbbkjtLQt0sYda+d2S195BMaPNEd03ZOlqdo5wHVPmj6W9hYyNQfYJ2CrzLXsq3ASmSFh5Upaz/ZVS3tvz7Az9vBJVD73iS3bJBsJlYtAwFrBWBx1TK4mgoGJnp4N+jCeZiY4clIxdyPTMO0/0hJqYELh7pWE0GDH8C+l013zQtVj7QvkHZfYlYplqsg5fF0/7vKJU7rneyhueihiELSJ4sMhkUJS0y38oss6GX431REvuN+2MJ4swcrdAMjHiUlDnH69uh+M5 prod@example.com
+```
+
+자 이제 성공적으로 SSH키를 생성했으니, public key 를 AWS IAM에 등록해야 한다.
+
+# AWS IAM에서 CodeCommit SSH 키 보안증명
+- `id_rsa_dev_example.pub` public 키를 AWS 계정 "A" 의 IAM에 등록한다.
+- `id_rsa_prod_example.pub` public 키를 AWS 계정 "B" 의 IAM에 등록한다.
+
+1. IAM - 사용자 - 사용자 상세 페이지 - [보안 자격 증명] 탭 으로 이동한다.
+2. [AWS CodeCommit에 대한 SSH 키] 란에서 SSH 퍼블릭 키 업로드 버튼을 누른다.
+3. 해당 계정에 맞는 public 키의 내용을 복사 & 붙여넣기 한다.
+4. SSH 퍼블릭 키 업로드 버튼을 눌러 업로드한다.
+5. 이 후 생성된 "SSH 키 ID" 를 메모장 같은 곳에 복사 & 붙여넣기 해서 보관해놓는다. (있다가 필요하다.)
+
+# SSH 키 ID 등록
+- "A" 계정의 SSH 키 ID 는 "A1B2C3D4" 라고 가정한다.
+- "B" 계정의 SSH 키 ID 는 "D4C3B2A1" 라고 가정한다.
+- 아래와 같이 `~/.ssh/config` 파일을 수정한다. `~/.ssh/config` 파일이 없으면 생성한 후 수정한다.
+- Hostname 의 경우 다음 경로에서 확인 할 수 있다.
+    1. AWS CodeCommit repository 에 들어간다.
+    2. [코드] 페이지의 [연결] 버튼을 클릭한다.
+    3. SSH 를 클릭하고 [리포지토리를 복제하는 단계] 의 [3.리포지토리를 로컬 컴퓨터에 복제하고 코드 작업을 시작합니다.] 의 코드를 확인한다.
+    4. 코드에서 git-codecommit.[리젼명].amazonaws.com 부분을 Hostname 에 복사하면 된다.
+
+```
+$ vi ~/.ssh/config
+
+Host dev-test                                               // Host는 본인이 정하고 싶은 값으로 설정할 수 있다.
+Hostname git-codecommit.ap-northeast-2.amazonaws.com        // Hostname 은 리젼이 명시된 git-codecommit 주소어야 한다. "*" 는 안된다.
+User A1B2C3D4                                               // IAM 에 등록한 SSH 키 ID (아까 메모장에 복사해 놓은 ID)
+IdentityFile ~/.ssh/id_rsa_dev_example                      // IAM 에 등록한 SSH 키 ID 와 매핑되는 private key 위치 
+
+Host prod-test                                              // Host는 본인이 정하고 싶은 값으로 설정할 수 있다.
+Hostname git-codecommit.ap-northeast-2.amazonaws.com        // Hostname 은 리젼이 명시된 git-codecommit 주소어야 한다. "*" 는 안된다.
+User D4C3B2A1                                               // IAM 에 등록한 SSH 키 ID (아까 메모장에 복사해 놓은 ID)
+IdentityFile ~/.ssh/id_rsa_prod_example                     // IAM 에 등록한 SSH 키 ID 와 매핑되는 private key 위치 
+```
+
+# git remote url 설정
+- 로컬환경의 "EXAMPLE" repository 로 이동한다.
+- 다음처럼 git remote 브랜치를 설정한다.
+- ssh 주소에서 도메인명을 .ssh/config 에 등록한 Host 로 설정해주는 것이 중요하다.
+
+```
+$ cd ~/EXAMPLE      // 기본적인 Git local repository 라고 가정한다.
+
+$ git remote add dev ssh://dev-test/v1/repos/dev-multiple-remote-test       // AWS "A" 계정의 "DEV" CodeCommit url
+$ git remote add prod ssh://prod-test/v1/repos/prod-multiple-remote-test    // AWS "B" 계정의 "PROD" CodeCommit url
+$ git remote -v     // 잘 설정되었는지 확인
+```
+
+# TEST
+- `git push [remote명] [로컬브랜치명]` 으로 push 를 한다.
+
+```
+$ git push dev master       // master 브랜치를 AWS "A" 계정의 "DEV" CodeCommit repository에 push 한다.
+$ git push prod release     // release 브랜치를 AWS "B" 계정의 "PROD" CodeCommit repository에 push 한다.
+```
+
+SourceTree, GitKraken 같은 클라이언트에서도 지원할 것 같은데 확인해보지는 않았다.. ㅋㅋ

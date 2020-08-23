@@ -1,0 +1,943 @@
+---
+title: 속 깊은 자바스크립트
+date: 2018-01-11 10:00:00 +0900
+categories:
+- javascript
+tags:
+- javascript
+---
+
+# 스코프와 클로저
+- 스코프를 생성하는 구문
+    - function
+    - with
+        - with 블록 안에서 매개변수 객체의 속성들이 지역변수처럼 사용할 수 있는 것을 가리킴
+    - catch
+        - catch 블록에서 사용되는 매개변수 객체 (Error 객체)는 블록 안에서만 사용할 수 있다.
+
+## with 구문을 자제해야 하는 이유
+- 변수 탐색 비용이 더 발생할 수 있다. 상위 블록 변수를 추가로 등록할 때 with 블록을 탐색한 후 상위 블록을 탐색해서 변수가 없는 것을 확인한다.
+- 소스코드가 모호해 질 수 있다. with 블록 안의 변수가 with 매개변수 객체의 변수인지 상위 변수인지 알기 어렵다.
+- ECMA6 표준에서 제외된다.
+
+## 클로저 이해하기
+### 첫 번째 예제
+
+```javascript
+var countFactory = (function() {
+  var staticCount = 0;
+  
+  return function() {
+    var localCount = 0;
+    
+    return {
+      increase: function() {
+        return {
+          static: ++staticCount,
+          local: ++localCount
+        };
+      },
+      decrease: function() {
+        return {
+          static: --staticCount,
+          local: --localCount
+        };
+      }
+    };
+  };
+})();
+
+var counter = countFactory();
+var counter2 = countFactory();
+
+console.log(counter.increase());
+console.log(counter.increase());
+console.log(counter2.decrease());
+console.log(counter.increase());
+```
+
+### 두 번째 예제
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>클로저 예제</title>
+</head>
+<body>
+  <button id="btnToggle">Toggle Pending</button>
+  <div id="divPending">Pending</div>
+  <script>
+    (function() {
+      var pendingInterval = false;
+      var div = document.getElementById("divPending");
+      var btn = document.getElementById("btnToggle");
+      
+      function startPending() {
+        if (div.innerHTML.length > 13) {
+          div.innerHTML = "Pending";
+        }
+        div.innerHTML += ".";
+      };
+      
+      btn.addEventListener("click", function() {
+        if (!pendingInterval) {
+          pendingInterval = setInterval(startPending, 500);
+        } else {
+          clearInterval(pendingInterval);
+          pendingInterval = false;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
+```
+
+### 세 번째 예제
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>클로저 예제</title>
+</head>
+<body>
+  <div id="wrapper">
+    <button data-cb="1">Add div</button>
+    <button data-cb="2">Add img</button>
+    <button data-cb="delete">Clear</button>
+    Adding below... <br/>
+    <div id="appendDiv"></div>
+  </div>
+  <script>
+    (function() {
+      var appendDiv = document.getElementById("appendDiv");
+      document.getElementById("wrapper").addEventListener("click", append);
+      
+      function append(e) {
+        var target = e.target || e.srcElement || event.srcElement;
+        var callbackFunction = callback[target.getAttribute("data-cb")];
+        appendDiv.appendChild(callbackFunction());
+      };
+      
+      var callback = {
+        "1": (function () {
+          var div = document.createElement("div");
+          div.innerHTML = "Adding new div";
+          return function () {
+            return div.cloneNode(true);
+          };
+        })(),
+        "2": (function () {
+          var img = document.createElement("img");
+          img.src = "https://dummyimage.com/600x400/000/fff";
+          return function () {
+            return img.cloneNode(true);
+          };
+        })(),
+        "delete": function() {
+          appendDiv.innerHTML = "";
+          return document.createTextNode("Cleared");
+        }
+      };
+    })();
+  </script>
+</body>
+</html>
+```
+
+- 중복해서 DOM을 탐색하거나 특정 템플릿을 가지는 DOM을 생성할 때는 클로저로 초기화하여 사용하는 것이 성능에 유리하다.
+- 클로저는 이럴 때 사용하자
+    - 반복적으로 같은 작업을 할 때
+    - 같은 초기화 작업이 지속적으로 필요할 때
+    - 콜백 함수에 동적인 데이터를 넘겨주고 싶을 때
+
+### 클로저의 단점
+- 메모리 소모
+    - 루프를 돌면서 클로저를 계속 생성하는 설계는 지양해야 한다.
+- 스코프 생성과 이후 변수 조회에 따른 성능저하
+    - 가장 하위에 있는 함수에서 상위에 있는 변수에 접근하고자 할 때 탐색 비용이 발생한다.
+
+# 변수
+- 새로운 스코프를 시작할 때 var 를 한번만 쓰고 그 스코프에서 사용할 변수들을 나열하는 것이 최적화 및 성능 측면에서 효율적이다.
+- 글로벌 변수의 사용을 최소화하기 위하여 클로저나 모듈 패턴을 사용하는 것이 좋다.
+- 상위 스코프의 변수를 계속 참조하는 것보다 한번만 지역변수에 상위 스코프 변수를 할당하고 그 지역변수를 사용하는 것이 더 효율적이다.
+
+# 프로토타입, 객체지향, 상속
+- `Function`을 생성할 때 기본적으로 프로토타입 속성이 생성된다.
+- 이 프로토타입을 다른 객체로 설정함으로써 다른 객체의 속성들과 함수들을 공유 또는 상속할 수 있다.
+- 객체는 프로토타입과 내부 링크로 연결되어 있어 프로토타입의 속성들을 자기의 속성인 것 처럼 접근할 수 있다.
+- 객체에서 직접 `this.constructor.prototype` 으로 접근하지 않으면 프로토타입의 값은 수정되지 않고 현재 객체 내에 같은 이름의 속성이 설정되어 프로토타입의 설정값이 가려진다.
+- `new` 로 객체를 생성할 때 프로토타입은 객체 간 공유되어 메모리 자원이 절약될 수 있다.
+- 여러 개의 프로토타입 체인을 만들 경우 속성 조회에 있어서 성능 저하가 있을 수도 있다.
+- `new` 는 생성자 기반 상속으로 사용되며, `Object.create` 는 객체 기반 상속으로 사용된다.
+- 객체지향을 위한 `class` 와 `extends` 키워드가 정의되었지만 호환성 검토가 필요하다.
+- `new` 와 생성자로 객체를 생성하는 것이 `Object.create` 로 생성하는 것보다 성능상 유리하다.
+- 성능 이슈는 객체를 다량으로 사용하는 경우 조심하면 좋지만, 특별한 경우가 아니면 체감하기 힘들다.
+
+# 디자인패턴
+## 모듈 패턴
+- 모듈패턴은 글로벌 변수를 최소화하고 라이브러리나 API의 소스 관리에 유용하다.
+
+## 이벤트 델리게이션 패턴
+- 이벤트 델리게이션 패턴은 여러 DOM에 이벤트 핸들러를 걸어야 하는 경우와 동적인 DOM의 이벤트 처리를 해야 하는 경우 유용하다.
+- 이벤트 처리 단계는 [캡처링]-[대상]-[버블링] 의 세 단계로 이루어져 있다.
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>이벤트 캡처링, 버블링</title>
+  <style>
+    div {
+      border: none;
+    }
+    .divOutside {
+      width: 200px;
+      height: 200px;
+      background-color: lightgreen;
+    }
+    .divMiddle {
+      width: 150px;
+      height: 150px;
+      background-color: lightblue;
+    }
+    .divInside {
+      width: 100px;
+      height: 100px;
+      background-color: pink;
+      position: relative;
+    }
+    .divFloat {
+      position: absolute;
+      left: 210px;
+      height: 50px;
+      width: 50px;
+      background-color: lightgray;
+    }
+    .highlight {
+      background-color: black;
+    }
+    </style>
+</head>
+<body>
+    <div id="divBubblingOutside" class="divOutside">
+        <div id="divBubblingMiddle" class="divMiddle">
+            <div id="divBubblingInside" class="divInside">
+                Bubbling
+                <div id="divBubblingFloat" class="divFloat"></div>
+            </div>
+        </div>
+    </div>
+    <br/>
+    <div id="divCapturingOutside" class="divOutside">
+        <div id="divCapturingMiddle" class="divMiddle">
+            <div id="divCapturingInside" class="divInside">
+                Capturing
+                <div id="divCapturingFloat" class="divFloat"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        (function() {
+            document.getElementById("divBubblingOutside")
+            .addEventListener("click", function() {
+                this.classList.toggle('highlight');
+                alert("Outside Bubbling");
+                this.classList.toggle("highlight");
+            });
+            document.getElementById("divBubblingMiddle")
+            .addEventListener("click", function() {
+                this.classList.toggle("highlight");
+                alert("Middle Bubbling");
+                this.classList.toggle("highlight");
+            });
+            document.getElementById("divBubblingInside")
+            .addEventListener("click", function() {
+                this.classList.toggle("highlight");
+                alert("Inside Bubbling");
+                this.classList.toggle("highlight"); 
+            });
+            document.getElementById("divBubblingFloat")
+            .addEventListener("click", function() {
+                this.classList.toggle("highlight");
+                alert("Float Bubbling");
+                this.classList.toggle("highlight"); 
+            });
+            document.getElementById("divCapturingOutside")
+            .addEventListener("click", function() {
+                this.classList.toggle('highlight');
+                alert("Outside capturing");
+                this.classList.toggle("highlight");
+            }, true);
+            document.getElementById("divCapturingMiddle")
+            .addEventListener("click", function() {
+                this.classList.toggle("highlight");
+                alert("Middle capturing");
+                this.classList.toggle("highlight");
+            }, true);
+            document.getElementById("divCapturingInside")
+            .addEventListener("click", function() {
+                this.classList.toggle("highlight");
+                alert("Inside capturing");
+                this.classList.toggle("highlight"); 
+            }, true);
+            document.getElementById("divCapturingFloat")
+            .addEventListener("click", function() {
+                this.classList.toggle("highlight");
+                alert("Float capturing");
+                this.classList.toggle("highlight"); 
+            }, true);
+        })();
+    </script>
+</body>
+</html>
+```
+
+- `event.stopPropagation();` 으로 이벤트 단계를 중단할 수 있다.
+
+## 프락시 패턴
+- 프락시패턴을 통해 다른 객체에 접근하게 해주거나 다른 함수를 호출하게 해줄 수 있다.
+- 프락시패턴으로 wrapper 함수를 만들 수 있다. 다른 라이브러리나 모듈을 사용하기 전에 전처리 를 편하게 할 수 있다.
+
+```javascript
+(function () {
+  function wrap(func, wrapper){
+    return function() {
+      var args = [func].concat(Array.prototype.slice.call(arguments));
+      return wrapper.apply(this, args);
+    };
+  }
+  
+  function existingFunction() {
+    console.log("Existing function is called with arguments");
+    console.log(arguments);
+  }
+  
+  var wrappedFunction = wrap(existingFunction, function (func) {
+    console.log("Wrapper function is called with arguments");
+    console.log(arguments);
+    func.apply(this, Array.prototype.slice.call(arguments, 1));
+  });
+  
+  console.log("1. Calling existing function");
+  existingFunction("existingFunction First argument", "existingFunction Second argument", "existingFunction Third argument");
+  
+  console.log("\n2. Calling wrapped function");
+  wrappedFunction("wrappedFunction First argument", "wrappedFunction Second argument", "wrappedFunction Third argument");
+})();
+```
+
+- 프락시패턴으로 로그를 남기는 기능을 구현할 수도 있다.
+
+```javascript
+(function() {
+  var car = {
+    beep: function beep() {
+      console.log('beep');
+    },
+    brake: function brake() {
+      console.log('stop');
+    },
+    accelerator: function accelerator() {
+      console.log('go');
+    }
+  };
+  
+  function wrap(func, wrapper) {
+    return function() {
+      var args = [func].concat(Array.prototype.slice.call(arguments));
+      return wrapper.apply(this, args);
+    };
+  }
+  
+  function wrapObject(obj, wrapper) {
+    var prop;
+    for(prop in obj) {
+      if (obj.hasOwnProperty(prop) && typeof obj[prop] === 'function') {
+        obj[prop] = wrap(obj[prop], wrapper);
+      }
+    }
+  }
+  
+  wrapObject(car, function(func) {
+    console.log(func.name + ' has been invoked');
+    
+    func.apply(this, Array.prototype.slice(arguments, 1));
+  });
+  
+  car.accelerator();
+  car.beep();
+  car.brake();
+})();
+```
+
+## 데코레이터 패턴
+- 호출 대상이 되는 객체에 추가 기능을 자유롭게 추가하는 패턴이다.
+- 검증 도구 (validation check) 에 유용하다.
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>데코레이터 패턴</title>
+</head>
+<body>
+<form id="personalInformation">
+    <label>First name: <input type="text" class="validate" data-validate-rules="required alphabet" name="firstName"></label><br/>
+    <label>Last name: <input type="text" class="validate" data-validate-rules="required alphabet" name="lastName"></label><br/>
+    <label>Age: <input type="text" class="validate" data-validate-rules="number" name="age"></label><br/>
+    <label>Gender: 
+        <select class="validate" data-validate-rules="required">
+            <option>Male</option>
+            <option>Female</option>
+        </select>
+    </label><br/>
+    <input type="submit">
+</form>
+<script>
+    (function() {
+        var formPersonalInformation = document.getElementById("personalInformation"),
+        validator = new Validator(formPersonalInformation);
+
+        function Validator(form) {
+            this.validatingForm = form;
+            form.addEventListener("submit", function() {
+                if (!validator.validate(this)) {
+                    event.preventDefault();
+                    event.returnValue = false;
+                    return false;
+                }
+                alert("Success to validate");
+                return true;
+            });
+        }
+
+        Validator.prototype.ruleSet = {};
+        Validator.prototype.decorate = function(ruleName, ruleFunction) {
+            this.ruleSet[ruleName] = ruleFunction;
+        }
+        Validator.prototype.validate = function(form) {
+            var validatingForm = form || this.validatingForm,
+            inputs = validatingForm.getElementsByClassName("validate"),
+            length = inputs.length,
+            i, j,
+            input,
+            checkRules,
+            rule,
+            ruleLength;
+
+            for(i = 0; i<length; i++) {
+                input = inputs[i];
+                if (input.dataset.validateRules) {
+                    checkRules = input.dataset.validateRules.split(" ");
+                    ruleLength = checkRules.length;
+                    for(j = 0; j<ruleLength; j++) {
+                        rule = checkRules[j];
+                        if (this.ruleSet.hasOwnProperty(rule)) {
+                            if (!this.ruleSet[rule].call(null, input)) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+        validator.decorate("required", function (input) {
+            if (!input.value) {
+                alert(input.name + " is required");
+                return false;
+            }
+            return true;
+        });
+        validator.decorate("alphabet", function (input) {
+            var regex = /^[a-zA-Z\s]*$/;
+            if (!regex.test(input.value)) {
+                alert(input.name + " has to be only alphabets");
+                return false;
+            }
+            return true;
+        });
+        validator.decorate("number", function (input) {
+            var regex = /^[0-9]{1,}$/;
+            if(!regex.test(input.value)) {
+                alert(input.name + " has to be only numbers");
+                return false;
+            }
+            return true;
+        });
+    })();
+</script>
+</body>
+</html>
+```
+
+## Init-time branching 패턴
+- 초기화 단계에서 기능에 따라 다르게 호출되도록 함수가 변경되는 것.
+- 크로스 브라우저 할 때 주로 사용된다. ex) IE8 이하는 addEventListener 가 아닌 attachEvent 를 사용한다.
+
+## Self-defining function 패턴
+- Init-time branching 패턴과 유사한 패턴으로 Init-time branching 패턴이 최초 초기화 단계에 함수 호출 방법을 결정한다면, Self-defining function 패턴은 최초 실행되는 시기에 함수 호출 방법을 결정한다.
+- 처음 초기화 단계를 거치고 나면 이후에 같은 작업을 계속 반복하지 않아도 되거나 작업중에 또 요청이 왔을 때 중복실행을 방지할 경우 좋다.
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>Self-defining function 패턴</title>
+  <style>
+      #commentWrapper {
+          width: 200px;
+      }
+      .comment {
+          width: 150px;
+          display: inline-block;
+      }
+      .name {
+          width: 40px;
+          display: inline-block;
+      }
+  </style>
+</head>
+<body>
+    <div id="commentWrapper">
+        <div>
+            <div class="comment">Comment</div>
+            <div class="name">Name</div>
+        </div>
+    </div>
+    <form id="formComment">
+        <label>Comment: <input type="text" id="comment"></label>
+        <label>Name: <input type="text" id="name"></label>
+        <input type="submit">
+    </form>
+<script>
+    (function() {
+        var addComment = function() {
+            var divCommentWrapper = document.getElementById("commentWrapper"),
+            divCommentRow = document.createElement("div"),
+            divComment = document.createElement("div"),
+            divName = document.createElement("div"),
+            inputComment = document.getElementById("comment"),
+            inputName = document.getElementById("name");
+
+            divComment.className = "comment";
+            divName.className = "name";
+            divCommentRow.appendChild(divComment);
+            divCommentRow.appendChild(divName);
+
+            addComment = function() {
+                divComment.innerHTML = inputComment.value;
+                divName.innerHTML = inputName.value;
+
+                inputComment.value = "";
+                inputName.value = "";
+
+                divCommentWrapper.appendChild(divCommentRow.cloneNode(true));
+            };
+            addComment();
+        }
+
+        document.getElementById("formComment").addEventListener("submit", function() {
+            addComment();
+            event.returnValue = false;
+            return false;
+        });
+    })();
+</script>
+</body>
+</html>
+```
+
+- 초기화 작업이 매번 필요한 함수나 클로저에 초기화 내용을 저장해야 하는 함수에 활용하면 좋다.
+- 단점은 불필요한 클로저가 생성되고 데이터가 메모리에 계속 남아있기 때문에 한 번만 사용하고 안 할 것이라면 undefined 로 초기화 하는 것이 좋다.
+
+## 메모이제이션 패턴
+- 재귀가 아닌 일반적인 산술처리나 XMLHttpRequest 등과 같이 캐시를 활용할 수 있는 함수에 추가 기능으로 사용하면 좋다.
+- 재귀함수는 직접 메모이제이션 패턴을 설계하여 사용하는 것이 더 좋은 성능을 보여준다.
+- 캐시와 같은 기능을 수행하여 성능과 서버 요청 최적화에 유용하다.
+
+## Self-invoking constructor 패턴
+- `new` 를 빼 먹고 생성자를 호출할 경우를 대비해서 생성자를 그냥 함수로 호출할 때 스스로 `new` 를 붙여서 다시 호출하는 패턴.
+- 함수 기반의 객체지향을 개발하는 경우 방어적인 코딩으로 활용하면 좋다.
+
+## 콜백 패턴
+- nodeJS 나 이벤트 핸들러의 콜백함수를 가리킨다.
+- 비동기 요청에 대한 순서 보장에 활용하면 좋다.
+
+## 커링 패턴
+- 함수를 설계할 때 인자 전체를 넘겨서 호출할 수도 있지만, 일부 인자는 먼저 입력해두고 나머지만 입력받을 수 있도록 새로운 함수를 만드는 패턴
+- 자바스크립트는 클로저가 있어서 먼저 일부 입력된 값을 유지하고, 가지고 있는 것을 아주 쉽게 구현할 수 있다.
+
+```javascript
+(function () {
+  function sum(x, y) {
+    return x + y;
+  }
+  
+  var makeAdder = function (x) {
+    return function (y) {
+      return sum(x, y);
+    };
+  };
+  
+  var adderFour = makeAdder(4);
+  console.log(adderFour(1));
+  console.log(adderFour(5));
+})();
+```
+
+```javascript
+(function () {
+  Function.prototype.curry = function() {
+    if (arguments.length < 1) {
+      return this;
+    }
+    
+    var _this = this,
+        args = Array.prototype.slice.apply(arguments);
+    
+    return function() {
+      return _this.apply(this, args.concat(Array.prototype.slice.apply(arguments)));
+    }
+  }
+  
+  function unitConvert(fromUnit, toUnit, factor, input) {
+    return input + ' ' + fromUnit + ' = ' + (input * factor).toFixed(2) + ' ' + toUnit;
+  }
+  
+  var cm2inch = unitConvert.curry('cm', 'inch', 0.393701),
+      metersquare2pyoung = unitConvert.curry('m^2', 'pyoung', 0.3025),
+      kg2lb = unitConvert.curry('kg', 'lb', 2.204623),
+      kmph2mph = unitConvert.curry('km/h', 'mph', 0.621371);
+  
+  console.log(cm2inch(10));
+  console.log(metersquare2pyoung(30));
+  console.log(kg2lb(50));
+  console.log(kmph2mph(100));
+})();
+```
+
+- 커링 패턴은 하나의 공용 함수가 있는 경우 이를 세부적인 기능을 하는 함수로 나누고 싶을 때 유용하다.
+- 단점은 클로저도 그렇지만 프로그램이 돌아가는 순서를 쫓아가기에 조금 힘들 수도 있다.
+
+# 브라우저 환경에서의 자바스크립트
+## requestAnimationFrame()
+- 시간을 보장하는 함수
+- `setInterval()`은 백그라운드에서도 실행되지만 `requestAnimationFrame()` 은 화면에 repaint 가 일어날 때 호출되므로 백그라운드에서 호출되지 않고 대기한다.
+
+## DOM repaint
+- DOM 요소들의 위치가 변경되지 않고 표현되는 스타일만 변경되는 경우 다시 그리는 기능
+
+## DOM reflow
+- DOM이 화면에 표시되는 구조가 바뀔 때, 또는 CSS 클래스가 바뀔 때 위치를 다시 계산하는 기능
+- 특정 element가 변경되면 그에 영향을 받는 자식 element와 해당 element 이후에 나타나는 element들에 대해서 전체적으로 위치를 다시 계산해야 하므로 자원소모가 repaint 보다 크다.
+- element의 크기가 변경되거나 className이 변경되거나 브라우저 창의 크기가 변경될 때 발생한다.
+
+### reflow 자원 소모 최소화 방법
+- 크기가 변경될 DOM의 자식 element 를 최소화하거나 변경될 DOM을 웹페이지의 아래쪽에 배치하는 것.
+- 크기나 위치의 변경이 일어나는 DOM element 스타일의 position 을 `absolute` 나 `fixed` 로 설정하는 것이 좋다.
+- 위치가 변경되는 element에 자식 element를 너무 많이 만들지 않는 것이 기본.
+- `position:relative` 안에 `position:absolute`를 이용하면 페이지 중간에도 `position:absolute` 를 넣을 수 있다.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>position:relative 와 position:absolute</title>
+    <style>
+        #bannerWrapper {
+            overflow: hidden;
+            height: 400px;
+            width: 265px;
+            position: relative;
+        }
+
+        #bannerImg {
+            position: absolute;
+        }
+
+        #bannerImg.mouseover {
+            top: -400px;
+        }
+    </style>
+</head>
+<body>
+    <div id="bannerWrapper">
+        <img id="bannerImg" src="http://i.imgur.com/3DpJ0ou.png"/>
+    </div>
+    <script>
+        (function() {
+            var imgBannerImg = document.getElementById('bannerImg');
+            imgBannerImg.addEventListener('mouseover', function() {
+                this.classList.add('mouseover');
+            });
+            imgBannerImg.addEventListener('mouseout', function() {
+                this.classList.remove('mouseover');
+            });
+        })();
+    </script>
+</body>
+</html>
+```
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>DOM reflow를 최소화한 공지사항 목록</title>
+    <style>
+        #noticeWrapper {
+            overflow: hidden;
+            height: 20px;
+            width: 200px;
+            position: relative;
+            border: 1px solid black;
+        }
+
+        #notice {
+            position: absolute;
+            margin: 0;
+            padding: 0;
+            top: 0;
+        }
+
+        .noticeSubject {
+            height: 20px;
+            width: 200px;
+            list-style: none;    
+        }
+
+        .noReflow {
+            width: 200px;
+            height: 100px;
+            border: 1px solid black;
+            background-color: lightgray;
+        }
+    </style>
+</head>
+<body>
+    <div class="noReflow">
+        I'll nor reflow
+    </div>
+    <div id="noticeWrapper">
+        <ul id="notice">
+            <li class="noticeSubject">Link to the first article</li>
+            <li class="noticeSubject">Link to the second article</li>
+            <li class="noticeSubject">Link to the third article</li>
+            <li class="noticeSubject">Link to the last article</li>
+        </ul>
+    </div>
+    <div class="noReflow">
+        Neither me
+    </div>
+    <script>
+        (function() {
+            var ulNotice = document.getElementById('notice'),
+            currentNoticeTop = 0,
+            currentIndex = 0,
+            maxIndex = ulNotice.getElementsByClassName('noticeSubject').length - 1,
+            currentRollingUp = true,
+            subjectHeight = 20,
+            velocityPerSecond = 20,
+            previousFrame = null;
+
+            setTimeout(rollNextNotice, 0);
+
+            function rollNextNotice() {
+                requestAnimationFrame(rollNotice);
+            }
+
+            function rollNotice(time) {
+                var diff = (previousFrame !== null ? time - previousFrame : 0);
+                previousFrame = time;
+                currentNoticeTop += (diff / 1000) * velocityPerSecond;
+
+                if (currentNoticeTop * velocityPerSecond >= currentIndex * -subjectHeight * velocityPerSecond) {
+                    if (currentIndex === maxIndex || currentIndex === 0) {
+                        currentRollingUp = !currentRollingUp;
+                        velocityPerSecond = -velocityPerSecond;
+                    }
+
+                    currentNoticeTop = currentIndex * -subjectHeight;
+                    currentIndex += (currentRollingUp ? -1 : 1);
+                    previousFrame = null;
+                    setTimeout(rollNextNotice, 1000);
+                } else {
+                    requestAnimationFrame(rollNotice);
+                }
+                ulNotice.style.top = currentNoticeTop + 'px';
+            }
+        })();
+    </script>
+</body>
+</html>
+```
+
+- reflow 가 일어 날 때 CSS 선택자에 대한 계산도 다시 일어나는데, 일반적으로 CSS에서 많은 자원 소모가 있는 것은 단계적으로 태그명을 토대로 상화 관계를 명시해서 스타일을 적용한 경우다.
+  - 이를 방지하기 위해 ID나 class를 선택자로 이용해서 DOM 탐색을 최소화하는 것이 좋다.
+- DOM 을 추가/삭제 시 reflow 가 여러 번 발생 할 수 있다. 이를 방지하기 위해 화면 뒤에서 DOM이 안 보이는 상태에서 설정할 수 있는 모든 내용을 설정한 다음에 화면에 표시되도록 하는 것이 유리하다.
+  - 여러 개의 DOM을 추가 할 때는 `DocumentFragment` 객체에 추가해두고 마지막에 실제 DOM에 추가하는 것이 좋다.
+  - 또는 `display:none` 으로 Element 를 아예 백그라운드로 뺀 다음 변경 내용을 반영한 후 다시 `display:block` 을 하면 좋다.
+- DOM element 의 `offsetWidth`와 `clientHeight`에 접근하거나 `getComputedStyle()` 에 접근할 때 reflow 가 일어날 수 있다.
+  - 일반적으로 브라우저는 실행중인 자바스크립트가 끝난 후 reflow 를 한번에 처리하지만, 이 경우 자바스크립트가 실행중에 진행되므로 성능에 치명적일 수 있다.
+  - 될 수 있으면 DOM reflow 를 일으키는 모든 변경을 완료하고 속성에 접근하는 것이 좋다.
+
+## DOM 탐색 횟수 최소화
+- DOM 을 탐색하는 대표적인 함수는 다음과 같다.
+
+```javascript
+var element = document.getElementById('myElement');
+var classElements = document.getElementsByClassName('myClass');
+var tagElements = document.getElementsByTagName('div');
+var cssSelector = document.querySelector('div#cssSelector');
+var cssSelectors = document.querySelectorAll('div.myClass');
+```
+
+- DOM 을 탐색해서 가져오는 것은 자바스크립트 내에서 클로저 내의 변수를 검색하거나 속성을 검색하는 것보다 컴퓨팅 자원을 더 소모한다.
+- 메모이제이션 패턴을 사용해서 DOM 탐색비용을 줄일 수도 있다.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>메모이제이션 패턴을 이용한 DOM 탐색 최적화 예</title>
+</head>
+<body>
+    <form id="myForm">
+        <input type="text" name="firstName" id="firstName"/>
+        <input type="text" name="middleName" id="middleName"/>
+        <input type="text" name="lastName" id="lastName"/>
+        <input type="submit" value="Submit"/>
+    </form>
+    <script>
+        (function() {
+            var memo = {};
+            document.getElementById('myForm').onsubmit = function() {
+                var inputFirstName = getMemo('firstName'),
+                inputMiddleName,
+                inputLastName;
+
+                if (inputFirstName.value === '') {
+                    alert('First name is mandatory');
+                    inputFirstName.focus();
+                    return false;
+                }
+
+                inputLastName = getMemo('lastName');
+
+                if (inputLastName.value === '') {
+                    alert('Last name is mandatory');
+                    inputLastName.focus();
+                    return false;
+                }
+
+                inputMiddleName = getMemo('middleName');
+
+                alert('Hello, ' + inputFirstName.value + ' ' + inputMiddleName.value + ' ' + inputLastName.value);
+            }
+
+            function getMemo(id) {
+                memo[id] = memo[id] || document.getElementById(id);
+                
+                return memo[id];
+            }
+        })();
+    </script>
+</body>
+</html>
+```
+
+## 웹 워커
+- 싱글스레드인 브라우저에서 별도의 자바스크립트 스레드가 생김 이것이 웹 워커
+- 별도의 스레드라 UI를 직접 변경시킬순 없다.
+- `dedicated worker` 는 worker를 생성한 스크립트에서만 호출과 접근을 할 수 있고, `shared worker`는 여러 개의 스크립트에서 접근할 수 있다. 
+- 하지만 `shared worker`는 `console.log()`  등의 함수들이 브라우저 개발자 도구를 통해서 확인할 수 없으므로 디버깅하기 어렵다.
+
+```html
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>웹 워커 사용 예</title>
+</head>
+<body>
+    <select id="doWorker">
+        <option>-- SELECT --</option>
+        <option>doLargeLoop</option>
+    </select>
+    <script>
+        (function() {
+            var worker = new Worker('./worker.js'),
+            selectWorker = document.getElementById('doWorker');
+
+            selectWorker.addEventListener('change', function() {
+                console.log('main thread: sending message - ' + this.value);
+                worker.postMessage(this.value);
+            });
+
+            worker.onmessage = function (msg) {
+                console.log('main thread: ' + msg.data);
+            }
+        })();
+    </script>
+</body>
+</html>
+```
+
+```javascript
+// worker.js
+(function () {
+    var messages = {
+        'doLargeLoop': function() {
+            var i, sum = 0,
+            start, end;
+            console.log('worker thread: starting large loop');
+
+            start = Date.now();
+            for (i = 0; i < 10000000000; i++) {
+                sum += i;
+            }
+
+            end = Date.now();
+            postMessage(`Elapsed time (${((end - start) / 1000).toFixed(2)} sec, sum=${sum}`);
+        }
+    };
+
+    onmessage = function (msg) {
+        if (messages.hasOwnProperty(msg.data)) {
+            messages[msg.data]();
+        }
+    }
+})();
+```
+
+# 자바스크립트 성능과 사용자 경험 개선
+- 브라우저는 DOM 을 전체적으로 파싱하면서 화면 레이아웃에 영향을 미치는 모든 CSS태그, 파일들을 파싱한다. 그 다음 화면에 표시하기 위해 레이아웃을 잡고 렌더링 단계를 거친다.
+- `<img>` 태그의 크기가 변하면 이미지가 로드될때마다 DOM reflow 가 일어나서 전체적인 웹페이지의 로딩 속도가 느려진다.
+- HTTP GET 요청을 최소화 하기 위해 gzip 압축, Expires 헤더를 통한 캐싱 등이 있다.

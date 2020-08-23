@@ -1,0 +1,57 @@
+---
+title: Webpack 소개
+date: 2017-10-12 00:00:00 +0900
+categories:
+- Webpack
+tags:
+- Webpack
+- javascript
+---
+
+## Webpack 은 무엇인가?
+* 서로 연관 관계가 있는 웹 자원들을 js, css, img와 같은 스태틱한 자원으로 변환해주는 모듈 번들러
+* 최종적으로 최적화된 파일셋으로 뽑아내는 역할
+
+## Webpack의 기능
+* 모듈관리를 수월하게 할 수 있다.
+* 최적화해서 웹페이지의 성능을 끌어올린다.
+
+
+## Webpack을 사용하는 이유 & 배경
+1. 새로운 형태의 Web Task Manager
+    * 기존 Web Task Manager (gulp, grunt)의 기능 + 모듈 의존성 관리
+    * 예) minification 을 web pack default cli로 실행 가능
+        * 기존 테스크매니저는 별도의 라이브러리를 추가해서 해야만 했다.
+        * $ web pack -p (상용화 버전으로 돌릴 수 있다.) 
+2. 자바스크립트 code based modules 관리
+    * 자바스크립트 모듈화의 필요성: AMD, Common.js, ES6(Modules)
+        * 자바스크립트가 scope가 전역으로 잡히고, 파일 베이스로 모듈화가 되지 않기 때문
+        * 기존의 모듈로더들을 통합해서 사용할 수 있게끔 웹팩이 나옴
+    * 기존 모듈 로더들과의 차이점: 모듈 간의 관계를 청크(chunk) 단위로 나눠 필요할 때 로딩
+        * 청크 기법으로 기존의 모듈로더에서 혜택을 보던 것들에 추가혜택을 볼 수 있다.
+    * 현대의 웹에서 JS 역할이 커짐에 따라, Client Side에 들어가는 코드량이 많아지고 복잡해짐
+        * 가독성있고 재사용성이 필요해짐
+    * 복잡한 웹 앱을 관리하기 위해 모듈 단위로 관리하는 CommonJS, AMD, ES6 Modules 등이 등장
+    * 가독성이나 다수 모듈 미병행 처리 등의 약점을 보완하기 위해 Webpack 등장
+
+## 자바스크립트 모듈화 문제란?
+아래 script 태그로 간단하게 자바스크립트 모듈화를 시도하는 예제
+```html
+<script src=“module1.js"></script>
+<script src=“module2.js"></script>
+<script src=“library1.js"></script>
+<script src=“module3.js"></script>
+````
+* 문제점: 전역변수 충돌, 스크립트 로딩 순서, 복잡도에 따른 관리상의 문제
+* 이를 해결하기 위해 AMD 및 기타 모듈 로더들, Webpack이 등장
+
+## Webpack의 철학
+1. Everything is Module
+    * 모든 웹 자원(js, css, html) 이 모듈 형태로 로딩 가능
+    * 로더를 이용해서 css나 html를 모듈로 가져올 수 있다.
+```js
+require('base.css');
+require('main.js');
+````
+2. Load only what you need and when you need
+    * 초기에 불필요한 것들을 모두 로딩하지 않고, 필요할 때 필요한 것만 로딩하여 사용

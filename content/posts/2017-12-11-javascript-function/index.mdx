@@ -1,0 +1,181 @@
+---
+title: 자바스크립트 함수
+date: 2017-12-11 10:00:00 +0900
+categories:
+- javascript
+tags:
+- javascript
+---
+
+# 함수의 특수한 속성
+자바스크립트에서 함수는 객체이다. 
+다른 객체들과 차이점은 내부 속성인 Call 을 가지고 있다. 
+Call 에는 함수의 실행동작이 정의되어 있다. 
+코드로 접근할 수는 없다.
+
+# 함수 오버로딩
+자바스크립트는 함수 오버로딩이 없다.
+대신 함수의 arguments 를 이용해서 개수를 구하고 이를 사용해 수행할 동작을 결정하면 가능하긴 하다.
+
+```javascript
+function sayMessage(msg) {
+    if (arguments.length === 0) {
+        msg = 'default message';
+    }
+    
+    console.log(msg);
+}
+
+sayMessage();
+sayMessage('Hello');
+``` 
+
+모든 함수는 항상 값을 반환한다. 아무 것도 return 하지 않으면 undefined 가 반환된다.
+
+# 1급 함수
+자바스크립트 함수는 [1급 함수](https://en.wikipedia.org/wiki/First-class_function) 이다.
+자바스크립트에서 함수는 객체이다. 
+변수, 배열, 객체에 저장될 수 있다. 
+함수의 매개변수나 반환값으로도 함수가 사용될 수 있으며, 함수가 객체이기 때문에 속성도 가지고 있다.
+그래서 자바스크립트는 1급 함수의 조건을 만족시킨다.
+또한 return 키워드를 사용하면 언제든지 함수를 취소시킬 수 있다.
+
+# 함수에 매개변수 전달하기
+함수에 매개변수를 전달하지 않아도 에러가 나지 않는다. 전달하지 않은 인수는 undefined가 된다.
+추가로 매개변수를 전달해도 에러가 나지 않는다. 정의되지 않은 추가 매개변수는 arguments 객체를 통해 접근할 수 있다.
+
+# arguments
+함수에 전달된 매개변수를 저장하고 있는 배열 비슷한 객체.
+
+## arguments.callee
+함수 scope에서 실행중인 함수를 참조하는 self-reference(자기참조) 속성.
+arguments.callee() 를 이용해서 재기호출을 할 수도 있다.
+
+## 함수 인스턴스 length, arguments.length
+함수 인스턴스에도 length 속성이 있고 arguments 속성에도 length 속성이 있다.
+함수 인스턴스의 length 속성은 함수에 정의된 매개변수의 수를 반환하며, arguments의 length는 실제로 전달된 매개변수의 수를 반환한다.
+함수 내에서 정의된 매개변수의 수를 알고 싶을 경우, arguments.callee.length 를 사용한다.
+
+```javascript
+var func = function(arg1, arg2) {
+    console.log('arguments.length = ' + arguments.length);
+    console.log('arguments.callee.length = ' + arguments.callee.length); // 함수 내에서 정의된 매개변수의 수를 알고 싶으면 arguments.callee.length 를 사용한다.
+};
+console.log('function instance length = ' + func.length);
+func('arg1', 'arg2', 'arg3');
+```
+
+# 함수를 정의하는 3가지 방법
+
+```javascript
+// 1. 함수 생성자
+var addConstructor = new Function('x', 'y', 'return x + y');
+
+// 2. 함수 선언문
+function addStatement(x, y) {
+    return x + y;
+};
+
+// 3. 함수 표현식
+var addExpression = function(x, y) {
+    return x + y;
+}
+
+console.log(addConstructor(2, 3), addStatement(2, 3), addExpression(2, 3));
+```
+
+# 함수를 호출하는 4가지 패턴
+1. 함수로서: `func();`
+2. 메소드로서: `obj.func();`
+3. 생성자로서: `var person = new Person();`
+4. apply() 또는 call() 을 사용해서 (apply와 call의 차이는 함수에 매개변수를 전달하는 방식 뿐이다.)
+
+```javascript
+var obj = {
+    func: function() {
+        console.log(this.name, arguments[0], arguments[1]);
+    }
+};
+
+var person1 = {name: 'john'}
+var person2 = {name: 'marry'}
+obj.func.call(person1, 'male', '17 years'); // obj.func 가 person1 객체의 메소드처럼 동작한다.
+obj.func.apply(person2, ['female', '16 years']); // obj.func 가 person2 객체의 메소드처럼 동작한다.
+```
+
+# 익명함수
+이름이 없는 함수로서, 다른 함수의 매개변수로 전달되는 경우가 많다.
+
+## 자기호출익명함수
+익명함수를 만들자마자 바로 함수를 호출하는 방법
+3가지 방법으로 호출할 수 있으며, 개인적으로 첫번째 방법이 가장 이해하기 쉽다고 느껴진다.
+
+```javascript
+//  첫번째 방법
+(function(msg) {
+    console.log(msg);
+})('hi');
+
+// 두번째 방법
+(function(msg) {
+    console.log(msg);
+}('hi'));
+
+// 세번째 방법
+!function sayHi(msg) {
+    console.log(msg);
+}('hi');
+```
+
+## 중첩 함수
+함수는 무한대로 중첩할 수 있으며, 중첩된 함수에서 this 는 header object (브라우저에서는 window)를 가리킨다.
+
+```javascript
+// 바깥 함수와 안의 함수를 바로 실행시켰을 때 this는 window를 가리킨다.
+var outerFunc = function () {
+    var innerFunc = function () {
+        console.log(this);
+    }();
+}();
+```
+
+## 교차함수 (higher-order function)
+함수를 인수로 받거나 반환하는 함수
+
+```javascript
+var foo = function(f) {return f;}
+var bar = foo(function() {console.log('hi');});
+bar();
+```
+
+## 함수 호이스팅(hoisting)
+자바스크립트는 코드를 실행하기전에 함수선언문을 먼저 해석하여 실행 스택 / 컨텍스트에 추가한다.
+이것을 밑에 있는 함수선언문을 끌어올린다는 의미에서 hoisting(끌어올리다)이라고 한다.
+단, 함수표현식으로 정의된 함수는 hoist 하지 않는다.
+
+```javascript
+(function() {
+    sayYo(); // sayYo 함수선언보다 먼저 호출되었지만 정상적으로 동작한다. 
+    function sayYo() {
+        console.log('Yo');
+    }
+})();
+
+console.log(sum(2, 3));
+function sum(x, y) {return x + y;};
+```
+
+## 재귀 호출
+자기를 스스로 여러번 호출한다.
+
+```javascript
+var countDownFrom = function countDownFrom(num) {
+    console.log(num);
+    num--;
+    if (num < 1) {
+        return false;
+    }
+    countDownFrom(num);
+};
+countDownFrom(5);
+```

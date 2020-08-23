@@ -1,0 +1,40 @@
+---
+title: HTTP 통신
+date: 2018-02-28 12:00:00 +0900
+categories:
+- network
+tags:
+- network
+---
+
+# HTTP 통신
+- 인터넷상에서 다양한 리소스를 가져올 수 있도록 해주는 프로토콜
+- 클라이언트 / 서버 모델을 따른다.
+- TCP/IP 위에서 작동한다.
+- 예약된 포트 번호은 **80** 이다.
+- 하나의 자원을 얻기 위해 한 번 연결한 후 응답을 받으면 연결을 끊는다. (connectless)
+- 연결이 유지되지 않기 때문에 클라이언트의 상태를 서버가 알 수 없다. (stateless)
+- 클라이언트가 서버에 상태 정보를 넘기기 위해 cookie를 이용해서 세션관리를 한다.
+
+## RESTful API
+- REST는 HTTP에서 CRUD로 데이터를 처리하기 위한 아키텍쳐로서, 추가적인 레이어나 세션관리 등이 필요없으며 오직 HTTP 프로토콜만을 이용한다.
+- 이러한 REST 구조를 적용해서 API를 만든 것이 RESTful API 다.
+- HTTP와 동일하게 stateless며 URI를 통해 리소스에 접근한다.
+
+## HTTPS
+- HTTP 데이터(응용계층)를 SSL(표현계층) 으로 감싸 암호화/복호화 한다.
+- SSL은 실제 데이터를 주고 받는 것은 양쪽이 같은 대칭키로 암호화한다.
+- 대칭키를 전달할 때는 사이트의 공개키로 암호화해서 데이터를 전송한다.
+- 인증기관은 사이트의 공개키가 신뢰할 수 있는지 보증하는 역할을 한다.
+- 인증서는 인증기관의 개인키로 사이트의 공개키를 전자서명과 함께 암호화한다.
+- HTTPS 는 HTTP에 비해 매우 느리다.
+
+## HTTP Caching
+- 정적파일 캐싱을 제거하는 방법에 HTTP Cache-Control 헤더에 **max-age** 값을 지정하는 방식이 있다.
+- [MDN 문서](https://developer.mozilla.org/ko/docs/Web/HTTP/Caching) 참고
+- [Google 문서](https://developers.google.com/web/fundamentals/performance/optimizing-content-efficiency/http-caching?hl=ko) 참고
+
+## HTTP2
+- HTTP2 는 stream 단위로 요청과 응답이 묶여서 하나의 stream에서 다수의 요청과 응답을 처리할 수 있다. 응답이 완료되는 것들부터 응답이 되므로 HeadOfBlocking 이슈가 없어지고 속도가 개선된다.
+- HTTP2는 Server Push 기능으로 브라우저에서 필요한 리소스들을 서버가 알아서 찾아서 전송해줄 수 있다.
+- HTTP2는 헤더를 압축해서 관리하기 때문에 이전 요청과 중복되는 요청의 헤더는 인덱스값만 전송하면 된다.

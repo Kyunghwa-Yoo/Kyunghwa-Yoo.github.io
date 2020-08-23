@@ -1,0 +1,151 @@
+---
+title: Deep Copying in javascript
+date: 2018-02-08 10:00:00 +0900
+categories:
+- javascript
+tags:
+- javascript
+---
+
+이 내용은 [Deep-copying in JavaScript](https://dassur.ma/things/deep-copy/)를 번역 및 수정한 내용입니다.
+
+----
+
+자바스크립트에서 object 를 어떻게 복사할까? 매우 단순한 질문이지만 정답은 단순하지 않다.
+
+# Call by reference
+자바스크립트에서 객체(Object)는 레퍼런스로 전달된다. (배열 또한 배열스러운 객체다.)
+예를 들어보자.
+
+```javascript
+function mutateObject(arg) {
+    arg.foo = true;
+}
+var obj = {
+    foo: false
+};
+
+mutateObject(obj);    // call by reference !
+
+console.log(obj); // true ! 
+```
+
+객체가 아닌 원시값(number, string, boolean 등)의 경우 'call by value' 방식으로 파라미터를 전달한다. 
+파라미터를 전달받은 함수는 값을 복사해서 함수 내부에서만 적용되는 변수로 사용한다.
+함수내에서 값을 아무리 지지고 볶아도 함수의 파라미터로 전달한 실제 값은 변하지 않는다.
+하지만 객체는 'call by reference' 방식으로 파라미터를 전달한다.
+즉, 값을 복사하는 것이 아니라 실제로 메모리에 올라와 있는 값을 사용한다.
+그렇기 때문에 함수내에서 그 값을 변경하면 함수 밖의 실제 값도 동일하게 변경되는 것과 같은 현상이 발생한다.
+
+하지만 가끔은 실제 값을 유지한 채 객체를 복사해서 함수내에서 사용하고 싶을 경우가 있다.
+
+# Shallow copy: Object.assign()
+객체를 복사하는 한가지 방법은 `Object.assign()` 메소드를 사용하는 것이다. 
+이 메소드는 여러 객체의 속성들(프로토타입 체이닝되지 않는 자체 속성들)을 복사해서 하나의 객체를 만들어준다.
+
+하지만 이것은 얕은 복사(Shallow copy) 라고 한다. 왜 얕다는 표현을 쓰냐면, 객체가 객체를 속성으로 가지고 있을 경우 객체의 레퍼런스를 복사하기 때문에 객체안의 객체는 복사가 아닌 참조가 될 뿐이기 때문이다.
+
+예를 들어보자.
+
+```javascript
+function mutateDeepObject(arg) {
+    arg.foo.bar = true;
+}
+
+var obj = {
+    foo: {
+        bar: false
+    }
+};
+
+var shallowCopied = Object.assign({}, obj);
+
+mutateDeepObject(shallowCopied);
+
+console.log(obj.foo.bar); // false 가 아닌 true
+```
+
+`Object.assign` 은 또한 getter들을 단순한 속성으로 변환한다.
+
+그리고 Object의 [spread syntax](https://developer.mozilla.org/ko/docs/Web/JavaScript/Reference/Operators/Spread_operator) 역시 Shallow copy 이다.
+
+# JSON.parse
+객체를 복사하는 가장 오래된 방법 중 하나는 `JSON.stringify` 한 문자열을 다시 `JSON.parse` 하는 것이다.
+이것의 단점은 임시적으로 긴 문자열을 단지 parser 에 다시 넣기 위해 생성한다는 것이다.
+또 다른 단점은 순환형 객체는 이 접근법으로 해결할 수 없다.
+예를 들어 트리 형식의 구조체를 만들 때 자식이 부모를 참조하는 경우, 결국 다시 자신을 참조하게 된다. (부모는 기본적으로 자식을 참조하고 있으니까)
+또한 Maps, Sets, RegExps, Dates, ArrayBuffers 같은 타입은 그 특성을 잃는다.
+
+# structured Clone
+[structured clone](https://developer.mozilla.org/ko/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) 은 이미 존재하는 알고리즘으로 복잡한 자바스크립트 객체를 직렬화하는 기능을 가진다.
+예를 들어, `postMessage`를 통해 다른 윈도우나 웹워커에 메시지를 보낼 경우 이 알고리즘이 사용된다. 좋은 점은 structured clone은 순환형 객체와 여러 타입의 객체들을 지원한다.
+문제점은 알고리즘이 공개되지 않았고, 오직 API로만 사용이 가능하다.
+
+## MessageChannel
+`postMessage` 를 사용하면 structured clone 알고리즘을 사용할 수 있다. MessageChannel 을 생성해서 자기자신에게 메시지를 보낼 수 있다. 리시버에서 복사된 객체를 얻을 수 있다.
+단점은 이 방식은 비동기 방식이다. 큰 문제가 아닐수 있지만 동기로 복사를 해야 할 때가 있을 수 있다.
+
+```javascript
+function structuralClone(obj) {
+  return new Promise(resolve => {
+    const {port1, port2} = new MessageChannel();
+    port2.onmessage = ev => resolve(ev.data);
+    port1.postMessage(obj);
+  });
+}
+
+const obj = /* ... */;
+const clone = await structuralClone(obj);
+```
+
+## History API
+`history.pushState()`를 사용할 때 state 객체가 URL과 함께 저장된다. 
+이 때 state 객체는 동기로 structured clone 된다. 
+state 객체는 프로그램 로직이 복잡해지지 않게 주의해야 하는데, 그래서 원래 state를 복사 후 복구해놓는 작업이 필요하다.
+예상치 못한 이벤트가 발생하는 것을 방지하기 위해 `history.replaceState()` 를 사용한다.
+
+```javascript
+function structuralClone(obj) {
+  const oldState = history.state;
+  history.replaceState(obj, document.title);
+  const copy = history.state;
+  history.replaceState(oldState, document.title);
+  return copy;
+}
+
+const obj = /* ... */;
+const clone = structuralClone(obj);
+```
+
+단순히 객체를 복사하기 위해 브라우저 엔진에 영향을 끼치긴 하지만, 원하는 결과물을 얻을 수 있다.
+또한 사파리에서는 `replaceState`를 30초에 100 번만 호출하도록 제한하고 있다.
+
+## Notification API
+Notification은 객체를 복사하는 data를 가지고 있다.
+
+```javascript
+function structuralClone(obj) {
+  return new Notification('', {data: obj, silent: true}).data;
+}
+
+const obj = /* ... */;
+const clone = structuralClone(obj);
+```
+
+짧고 간결하지만 권한을 브라우저로부터 받아야하고 사파리에서는 몇몇 이유로 항상 undefined 를 반환한다.
+
+# 성능 대잔치(extravaganza)
+어떤 방법이 가장 성능이 좋은지 궁금해졌다. 첫 번째 시도에서 작은 JSON 객체를 다양한 방법으로 복사하는데 활용하려 했지만 V8 엔진이 객체에 속성을 추가할 때 캐싱을 하다고 해서 랜덤하게 키 값을 설정해서 [테스트](https://deep-copy-median.glitch.me/)를 했다.
+
+> 원문과는 별도로 jQuery 와 lodash 를 추가해서 jsPerf 를 통해 자체 [테스트](https://jsperf.com/deep-copy-test-javascript)도 해보았다.
+
+## 그래프
+크롬, 파이어폭스, 엣지 브라우저에서 테스트했다. 그래프가 밑에 있을수록 더 나은 성능을 뜻한다.
+![Chrome](https://dassur.ma/things/deep-copy/chrome.png)
+![Firefox](https://dassur.ma/things/deep-copy/firefox.png)
+![Edge](https://dassur.ma/things/deep-copy/edge.png)
+
+
+# 결론
+- 순환형 객체를 다루지 않고 다양한 타입의 객체들을 만들지 않는다면 `JSON.parse` 방식이 가장 빠르다.
+- structured clone 을 원한다면 `MessageChannel`이 믿을 수 있는 크로스 브라우징 선택지이다.
