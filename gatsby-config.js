@@ -3,7 +3,13 @@ const shouldAnalyseBundle = process.env.ANALYSE_BUNDLE;
 module.exports = {
   siteMetadata: {
     siteTitle: 'Kyunghwa Yoo',
-    siteTitleAlt: 'Kyunghwa Yoo'
+    siteTitleAlt: 'Kyunghwa Yoo',
+    siteHeadline: 'Kyunghwa Yoo - Product Engineer',
+    siteUrl: 'https://kyunghwa-yoo.github.io',
+    siteDescription: 'react typescript nextjs nodejs styled-components react-spring',
+    siteLanguage: 'ko',
+    siteImage: `/banner.png`,
+    author: 'Kyunghwa Yoo',
   },
   plugins: [
     'gatsby-plugin-prettier-eslint',
