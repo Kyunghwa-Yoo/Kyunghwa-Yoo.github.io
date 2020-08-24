@@ -8,7 +8,7 @@ module.exports = {
     siteUrl: 'https://kyunghwa-yoo.github.io',
     siteDescription: 'react typescript nextjs nodejs styled-components react-spring',
     siteLanguage: 'ko',
-    siteImage: `/banner.png`,
+    siteImage: `/banner.jpg`,
     author: 'Kyunghwa Yoo',
   },
   plugins: [
