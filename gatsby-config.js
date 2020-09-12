@@ -6,7 +6,7 @@ module.exports = {
     siteTitleAlt: 'Kyunghwa Yoo',
     siteHeadline: 'Kyunghwa Yoo - Product Engineer',
     siteUrl: 'https://kyunghwa-yoo.github.io',
-    siteDescription: 'react typescript nextjs nodejs styled-components react-spring',
+    siteDescription: 'React Redux TypeScript NextJs AWS',
     siteLanguage: 'ko',
     siteImage: `/banner.jpg`,
     author: 'Kyunghwa Yoo',
@@ -17,6 +17,7 @@ module.exports = {
       resolve: '@lekoarts/gatsby-theme-minimal-blog',
       // See the theme's README for all available options
       options: {
+        formatString: 'YYYY. MM. DD',
         navigation: [
           {
             title: 'Blog',
