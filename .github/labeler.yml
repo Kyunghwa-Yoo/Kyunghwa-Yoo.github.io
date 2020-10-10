@@ -1,5 +1,5 @@
 repo:
-  - /*
+  - ./READEME.md
 about:
   - content/pages/about/*
 post:
