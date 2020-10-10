@@ -6,7 +6,7 @@ module.exports = {
     siteTitleAlt: 'Kyunghwa Yoo',
     siteHeadline: 'Kyunghwa Yoo - Product Engineer',
     siteUrl: 'https://kyunghwa-yoo.github.io',
-    siteDescription: 'React Redux TypeScript NextJs AWS',
+    siteDescription: 'React Redux TypeScript NextJs AWS Impact',
     siteLanguage: 'ko',
     siteImage: `/banner.jpg`,
     author: 'Kyunghwa Yoo',
