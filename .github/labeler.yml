@@ -2,5 +2,5 @@ repo:
   - ./**/*
 about:
   - content/pages/about/*
-posts:
+post:
   - content/posts/**/*
