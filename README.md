@@ -1,5 +1,5 @@
 # Kyunghwa Yoo
-> product-driven software engineer
+> Impact First, Solve Problem, Create Value.
 
 `#react` `#typescript` `#redux` `#nextjs` `#styled-components` 
 
