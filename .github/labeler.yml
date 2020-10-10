@@ -1,0 +1,4 @@
+about:
+  - content/pages/about/*
+posts:
+  - content/posts/**/*
